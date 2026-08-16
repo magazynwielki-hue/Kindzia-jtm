@@ -394,60 +394,83 @@
            PC/DESKTOP NIE JEST TYM BLOKIEM DOTKNIĘTY.
            ============================================================ */
         @media (max-width: 767px) {
-            html,
+            /*
+             * PWA / APLIKACJA Z EKRANU GŁÓWNEGO
+             *
+             * Na iOS/Android standalone 100vh/100dvh potrafi kończyć się
+             * przed fizycznym dołem ekranu (safe-area / system UI).
+             * Dlatego NIE opieramy dolnej krawędzi efektów na wysokości body.
+             * Wszystko jest świadomie "wyciągnięte" kilkaset px poza ekran.
+             */
+            html {
+                width: 100%;
+                min-width: 100%;
+                height: 100%;
+                min-height: 100%;
+                background: #020611;
+                overflow: hidden;
+            }
+
             body {
                 width: 100%;
                 height: 100%;
                 min-height: 100%;
-                min-height: 100dvh;
                 overflow: hidden;
                 background: #020611;
+                /* Nie pozwalamy flexowi przesunąć karty po zwiększeniu warstw tła. */
+                isolation: auto;
             }
 
-            /* Warstwa tła jest fixed i ma własny stacking context.
-               Dzięki temu nie kończy się razem z wysokością starego 100vh. */
+            /*
+             * TŁO: specjalnie dużo większe niż viewport.
+             * html również dostaje ten sam kolor, więc nawet gdy system
+             * pokaże dodatkowy obszar safe-area, nie powstanie czarne odcięcie.
+             */
             body::before {
-                position: fixed;
-                top: -18vh;
-                right: -18vw;
-                bottom: -18vh;
-                left: -18vw;
-                width: auto;
-                height: auto;
-                min-height: 136dvh;
+                content: '';
+                position: fixed !important;
+                top: -500px !important;
+                left: -500px !important;
+                right: -500px !important;
+                bottom: -500px !important;
+                width: auto !important;
+                height: auto !important;
+                min-height: 0 !important;
                 background: radial-gradient(
-                    circle at center,
+                    circle at 50% 42%,
                     #0a192f 0%,
-                    #04101f 48%,
+                    #04101f 45%,
+                    #020611 78%,
                     #020611 100%
-                );
-                z-index: 0;
+                ) !important;
+                z-index: 0 !important;
+                pointer-events: none;
             }
 
-            /* Animacje studia są warstwą nad tłem, ale pod kartą.
-               Overscan sprawia, że żaden efekt nie "dobija" do końca
-               dokładnie na krawędzi viewportu. */
+            /*
+             * CANVAS: 600 px overscanu w każdą stronę.
+             * Dzięki temu nuty, światła i fajerwerki mogą wyjechać poza
+             * fizyczną krawędź ekranu zamiast kończyć się linią na dole.
+             */
             #fxCanvas {
-                position: fixed;
-                top: -90px;
-                left: -90px;
-                width: calc(100vw + 180px);
-                height: calc(100dvh + 180px);
-                min-height: calc(100vh + 180px);
-                max-width: none;
-                max-height: none;
+                position: fixed !important;
+                top: -300px !important;
+                left: -300px !important;
+                right: -300px !important;
+                bottom: -300px !important;
+                width: auto !important;
+                height: auto !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
+                max-width: none !important;
+                max-height: none !important;
                 display: block;
                 pointer-events: none;
-                z-index: 1;
+                z-index: 1 !important;
             }
 
-            .card {
-                z-index: 10;
-            }
-
-            .home-btn {
-                z-index: 99999;
-            }
+            .card { z-index: 10; }
+            .home-btn { z-index: 99999; }
         }
     </style>
 </head>
@@ -704,8 +727,11 @@
                 document.documentElement.clientHeight ||
                 0;
 
-            canvas.width = Math.ceil(viewportW + 180);
-            canvas.height = Math.ceil(viewportH + 180);
+            // CSS ma overscan 300 px z każdej strony. Canvas musi mieć
+            // dokładnie tę samą geometrię, inaczej pojawi się odcięcie.
+            const MOBILE_OVERSCAN = 600;
+            canvas.width = Math.ceil(viewportW + MOBILE_OVERSCAN);
+            canvas.height = Math.ceil(viewportH + MOBILE_OVERSCAN);
             return;
         }
 
