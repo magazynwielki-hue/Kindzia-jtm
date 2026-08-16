@@ -146,12 +146,42 @@
             0% { transform: translateY(0) rotate(-6deg) scale(1); }
             100% { transform: translateY(-12px) rotate(6deg) scale(1.04); }
         }
+
+        /* ULEPSZENIA DEDYKOWANE DLA TELEFONÓW */
         @media (max-width: 480px) {
+            body {
+                min-height: 100dvh;
+                height: 100dvh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding-top: max(8px, env(safe-area-inset-top));
+                padding-bottom: max(8px, env(safe-area-inset-bottom));
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
+            }
+            .home-btn {
+                top: max(8px, env(safe-area-inset-top));
+                left: max(8px, env(safe-area-inset-left));
+                width: 38px;
+                height: 38px;
+            }
+            .home-btn svg {
+                width: 20px;
+                height: 20px;
+            }
+            .card {
+                padding: 18px 14px;
+                max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)));
+                overflow-y: auto;
+                margin: auto 0;
+            }
             .robert-speech-container { transform: translateX(-18%); }
             .dancing-robert { width: 140px; height: 180px; }
             .speech-bubble-wrapper { width: 240px; left: 75px; top: -30px; }
             .speech-text { font-size: 13.5px; line-height: 1.2; left: 18px; right: 18px; top: 10px; height: 80px; }
         }
+
         .menu-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
         .menu-btn {
             background: linear-gradient(135deg, rgba(0, 119, 182, 0.6), rgba(0, 180, 216, 0.4));
@@ -734,7 +764,7 @@
         { category: "Taco Hemingway", query: "Deszcz na betonie", title: "Deszcz na betonie - Taco Hemingway", audioSource: "audio/Taco Hemingway Deszcz na betonie prod.Rumak.mp3", startSec: 85 },
         { category: "Maryla Rodowicz", query: "Ale to już było", title: "Ale to już było - Maryla Rodowicz", audioSource: "audio/Maryla Rodowicz Ale to już było.mp3", startSec: 50 },
         { category: "Akcent", query: "Oczarowałaś mnie", title: "Oczarowałaś mnie - Akcent", audioSource: "audio/Akcent Oczarowałas Mnie Official Video.mp3", startSec: 45 },
-        { category: "Kaśka Sochacka", query: "Spokojnie", title: "Spokojnie - Kaśka Sochacka", audioSource: "audio/Kaśka Sochacka Spokojnie Official audio.mp3", startSec: 45 },
+        { category: "Kaśka Sochacka", query: "Spokojnie", title: "Spokojnie - Kaśka Sochacka", audioSource: "audio/Kaśka Sochacka标志 Spokojnie Official audio.mp3", startSec: 45 },
         { category: "Proletaryat", query: "Ziemi sól", title: "Ziemi sól - Proletaryat", audioSource: "audio/proletaryat ziemi sól.mp3", startSec: 18 },
         { category: "Lady Pank", query: "Otuleni", title: "Otuleni - Lady Pank", audioSource: "audio/Lady Pank Otuleni.mp3", startSec: 85 },
         { category: "Andrzej Piaseczny", query: "Imię deszczu", title: "Imię deszczu - Andrzej Piaseczny", audioSource: "audio/Piasek MAFIA Imię deszczu.mp3", startSec: 42 },
@@ -768,7 +798,7 @@
         { category: "Natalia Przybysz", query: "Nazywam Sie Niebo", title: "Nazywam Sie Niebo - Natalia Przybysz" },
         { category: "Procol Harum", query: "A Whiter Shade of Pale", title: "A Whiter Shade of Pale - Procol Harum" },
         { category: "Wham!", query: "Wake Me Up Before You Go-Go", title: "Wake Me Up Before You Go-Go - Wham!" },
-        { category: "Lao Che", query: "Stare标志 Miasto", title: "Stare Miasto - Lao Che" },
+        { category: "Lao Che", query: "Stare Miasto", title: "Stare Miasto - Lao Che" },
         { category: "Magda Umer", query: "Koncert jesienny na dwa świerszcze i wiatr w kominie", title: "Koncert jesienny na dwa świerszcze i wiatr w kominie - Magda Umer" },
         { category: "Earth, Wind & Fire", query: "Let's Groove", title: "Let's Groove - Earth, Wind & Fire" },
         { category: "Gotye", query: "Somebody That I Used to Know", title: "Somebody That I Used to Know - Gotye" },
@@ -785,7 +815,7 @@
         { category: "Chappell Roan", query: "Good Luck, Babe!", title: "Good Luck, Babe! - Chappell Roan" },
         { category: "Jan Pietrzak", query: "Żeby Polska", title: "Żeby Polska - Jan Pietrzak" },
         { category: "Avicii", query: "Levels", title: "Levels - Avicii" },
-        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To标志 Co Mam - Kasia Kowalska" },
+        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To Co Mam - Kasia Kowalska" },
         { category: "Stare Dobre Małżeństwo", query: "Czarny Blues O Czwartej Nad Ranem", title: "Czarny Blues O Czwartej Nad Ranem - Stare Dobre Małżeństwo" },
         { category: "Gigi D'Agostino", query: "L'amour toujours", title: "L'amour toujours - Gigi D'Agostino" },
         { category: "Metallica", query: "Nothing Else Matters", title: "Nothing Else Matters - Metallica" },
@@ -814,7 +844,7 @@
         { category: "Gala", query: "Freed from Desire", title: "Freed from Desire - Gala" },
         { category: "Ryszard Rynkowski", query: "Zycie Jest Nowela", title: "Zycie Jest Nowela - Ryszard Rynkowski" },
         { category: "R.E.M.", query: "Losing My Religion", title: "Losing My Religion - R.E.M." },
-        { category: "No Doubt", query: "Don't Speak", title: "Don't Speak - No Doubt" },
+        { category: "No Doubt", query: "Don't Speak", title: "Don't标志 Speak - No Doubt" },
         { category: "Kaśka Sochacka", query: "Niebo Było Różowe", title: "Niebo Było Różowe - Kaśka Sochacka" },
         { category: "Tones and I", query: "Dance Monkey", title: "Dance Monkey - Tones And I" },
         { category: "Sabrina Carpenter", query: "Espresso", title: "Espresso - Sabrina Carpenter" },
@@ -830,14 +860,14 @@
         { category: "Ewelina Lisowska", query: "W Stronę Słońca", title: "W Stronę Słońca - Ewelina Lisowska" },
         { category: "Sarsa", query: "Naucz Mnie", title: "Naucz Mnie - Sarsa" },
         { category: "The Rolling Stones", query: "Start Me Up", title: "Start Me Up - The Rolling Stones" },
-        { category: "The Rolling Stones", query: "Satisfaction", title: "Satisfaction - The Rolling Stones" },
+        { category: "The Rolling Stones", query: "Satisfaction", title: "Satisfaction -标志 The Rolling Stones" },
         { category: "Aerosmith", query: "Crazy", title: "Crazy - Aerosmith" },
         { category: "Aerosmith", query: "I Don't Want to Miss a Thing", title: "I Don't Want to Miss a Thing - Aerosmith" },
         { category: "Andrzej Rosiewicz", query: "Chłopcy Radarowcy", title: "Chłopcy Radarowcy - Andrzej Rosiewicz" },
         { category: "Andrzej Rosiewicz", query: "Najwięcej witaminy", title: "Najwięcej witaminy - Andrzej Rosiewicz" },
         { category: "Michał Bajor", query: "Ogrzej Mnie", title: "Ogrzej Mnie - Michał Bajor" },
         { category: "Budka Suflera", query: "Jolka, Jolka pamiętasz...", title: "Jolka, Jolka pamiętasz... - Budka Suflera" },
-        { category: "Krzysztof Kiljański", query: "Prócz Ciebie, Nic", title: "Prócz Ciebie, Nic - Krzysztof Kiljański" },
+        { category: "Krzysztof Kiljański", query: "Prócz Ciebie, Nic", title: "Prócz标志 Ciebie, Nic - Krzysztof Kiljański" },
         { category: "Zdzisława Sośnicka & Zbigniew Wodecki", query: "Z tobą chcę oglądać świat", title: "Z tobą chcę oglądać świat - Zdzisława Sośnicka & Zbigniew Wodecki" },
         { category: "Krzysztof Krawczyk & Edyta Bartosiewicz", query: "Trudno Tak", title: "Trudno Tak - Krzysztof Krawczyk & Edyta Bartosiewicz" },
         { category: "Mieczysław Fogg", query: "Jesienne róże", title: "Jesienne róże - Mieczysław Fogg" },
@@ -858,7 +888,7 @@
         { category: "Frank Sinatra", query: "Strangers In the Night", title: "Strangers In the Night - Frank Sinatra" },
         { category: "Frank Sinatra", query: "My Way", title: "My Way - Frank Sinatra" },
         { category: "Sandra", query: "Maria Magdalena", title: "Maria Magdalena - Sandra" },
-        { category: "Kylie Minogue", query: "The Loco-Motion", title: "The Loco-Motion - Kylie Minogue" },
+        { category: "Kylie Minogue", query: "The标志 Loco-Motion", title: "The Loco-Motion - Kylie Minogue" },
         { category: "Dead or Alive", query: "You Spin Me Round", title: "You Spin Me Round - Dead or Alive" },
         { category: "Rick Astley", query: "Never Gonna Give You Up", title: "Never Gonna Give You Up - Rick Astley" },
         { category: "Samantha Fox", query: "Touch Me", title: "Touch Me - Samantha Fox" },
@@ -867,7 +897,7 @@
         { category: "Viki Gabor", query: "Superhero", title: "Superhero - Viki Gabor" },
         { category: "Roksana Węgiel", query: "Dobrze Jest, Jak Jest", title: "Dobrze Jest, Jak Jest - Roxie Węgiel" },
         { category: "Roksana Węgiel", query: "Anyone I Want to Be", title: "Anyone I Want to Be - Roksana Węgiel" },
-        { category: "Dawid Kwiatkowski", query: "Proste", title: "Proste - Dawid Kwiatkowski" },
+        { category: "Dawid标志 Kwiatkowski", query: "Proste", title: "Proste - Dawid Kwiatkowski" },
         { category: "Dawid Kwiatkowski", query: "Bez Ciebie", title: "Bez Ciebie - Dawid Kwiatkowski" },
         { category: "Dolly Parton", query: "Jolene", title: "Jolene - Dolly Parton" },
         { category: "Rednex", query: "Cotton Eye Joe", title: "Cotton Eye Joe - Rednex" },
@@ -901,7 +931,7 @@
         { category: "Bon Jovi", query: "It's My Life", title: "It's My Life - Bon Jovi" },
         { category: "Bon Jovi", query: "Livin' On A Prayer", title: "Livin' On A Prayer - Bon Jovi" },
         { category: "Wojciech Gąssowski", query: "Gdzie Się Podziały Tamte Prywatki", title: "Gdzie Się Podziały Tamte Prywatki - Wojciech Gassowski" },
-        { category: "Maria Koterbska", query: "Karuzela", title: "Karuzela - Maria标志 Koterbska" },
+        { category: "Maria Koterbska", query: "Karuzela", title: "Karuzela - Maria Koterbska" },
         { category: "Maria Koterbska", query: "Serduszko Puka W Rytmie Cha-Cha", title: "Serduszko Puka W Rytmie Cha-Cha - Maria Koterbska" },
         { category: "Piotr Szczepanik", query: "Kochać", title: "Kochać - Piotr Szczepanik" },
         { category: "Piotr Szczepanik", query: "Goniąc kormorany", title: "Goniąc kormorany - Piotr Szczepanik, Alibabki & Ricercar 64" },
@@ -954,15 +984,15 @@
         { category: "Kylie Minogue", query: "Can't Get You Out of My Head", title: "Can't Get You Out of My Head - Kylie Minogue" },
         { category: "Cher", query: "Believe", title: "Believe - Cher" },
         { category: "Celine Dion", query: "I'm Alive", title: "I'm Alive - Céline Dion" },
-        { category: "Celine Dion", query: "My Heart Will Go On", title: "My Heart Will Go On - Céline Dion" },
+        { category: "Celine Dion", query: "My Heart Will Go On", title: "My标志 Heart Will Go On - Céline Dion" },
         { category: "K.A.S.A.", query: "Każdy Lubi Boogie", title: "Każdy Lubi Boogie - K.A.S.A." },
         { category: "Łzy", query: "Narcyz Się Nazywam", title: "Narcyz Się Nazywam - Lzy" },
         { category: "Łzy", query: "Agnieszka Już Dawno …", title: "Agnieszka Już Dawno … - Lzy" },
         { category: "Feel", query: "Jak Anioła Głos", title: "Jak Anioła Głos - Feel" },
         { category: "Feel", query: "No pokaz Na Co Cie Stac", title: "No pokaz Na Co Cie Stac - Feel" },
-        { category: "Feel", query: "A Gdy Jest Juz Ciemno", title: "A Gdy Jest标志 Juz Ciemno - Feel" },
+        { category: "Feel", query: "A Gdy Jest Juz Ciemno", title: "A Gdy Jest Juz Ciemno - Feel" },
         { category: "Kwiat Jabłoni", query: "Od nowa", title: "Od nowa - Kwiat Jabłoni" },
-        { category: "Kwiat Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś标志 Późno Pójdę Spać - Kwiat Jabłoni" },
+        { category: "Kwiat Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś Późno Pójdę Spać - Kwiat Jabłoni" },
         { category: "Daria Zawiałow", query: "Kaonashi", title: "Kaonashi - Daria Zawiałow" },
         { category: "Mrozu", query: "Aura", title: "Aura - Mrozu" },
         { category: "Mrozu", query: "Jak Nie My To Kto", title: "Jak Nie My To Kto - Mrozu" },
@@ -1012,7 +1042,7 @@
         { category: "Ricchi e Poveri", query: "Sarà Perché Ti Amo", title: "Sarà Perché Ti Amo - Ricchi & Poveri" },
         { category: "Toto Cutugno", query: "Solo noi", title: "Solo noi - Toto Cutugno" },
         { category: "Toto Cutugno", query: "L'italiano", title: "L'italiano - Toto Cutugno" },
-        { category: "Al Bano & Romina Power", query: "Ci Sarà", title: "Ci Sarà - Al Bano Carrisi & Romina Power" },
+        { category: "Al Bano & Romina Power", query: "Ci标志 Sarà", title: "Ci Sarà - Al Bano Carrisi & Romina Power" },
         { category: "Al Bano & Romina Power", query: "Felicità", title: "Felicità - Al Bano Carrisi & Romina Power" },
         { category: "Andrzej Piaseczny", query: "Chodz, Przytul, Przebacz", title: "Chodz, Przytul, Przebacz - Andrzej Piaseczny" },
         { category: "De Mono", query: "Statki Na Niebie", title: "Statki Na Niebie - De Mono" },
@@ -1063,7 +1093,7 @@
         { category: "Szwagierkolas", query: "U Cioci Na Imieninach", title: "U Cioci Na Imieninach - Szwagierkolaska" },
         { category: "KC and The Sunshine Band", query: "That's the Way", title: "That's the Way - KC and the Sunshine Band" },
         { category: "De Mono", query: "Znów Jesteś ze Mną", title: "Znów Jesteś ze Mną - De Mono" },
-        { category: "Anna Jantar", query: "Tyle Słońca W Całym Mieście", title: "Tyle Słońca W Całym Mieście - Anna Jantar" },
+        { category: "Anna Jantar", query: "Tyle Słońca W Całym Mieście", title: "Tyle Słońca W Całym标志 Mieście - Anna Jantar" },
         { category: "Anna Jantar", query: "Najtrudniejszy Pierwszy Krok", title: "Najtrudniejszy Pierwszy Krok - Anna Jantar" },
         { category: "Anna Jantar", query: "Nic nie może wiecznie trwać", title: "Nic nie może wiecznie trwać - Anna Jantar" },
         { category: "Anna Jantar", query: "Staruszek Świat", title: "Staruszek Świat - Anna Jantar" },
@@ -1120,7 +1150,7 @@
         { category: "Budka Suflera", query: "Bal Wszystkich Świętych", title: "Bal Wszystkich Świętych - Budka Suflera" },
         { category: "Budka Suflera", query: "Cień Wielkiej Góry", title: "Cień Wielkiej Góry - Budka Suflera" },
         { category: "Budka Suflera", query: "Za ostatni grosz", title: "Za ostatni grosz - Budka Suflera" },
-        { category: "Budka Suflera", query: "Ratujmy Co Się Da", title: "Ratujmy Co标志 Się Da - Budka Suflera" },
+        { category: "Budka Suflera", query: "Ratujmy Co Się Da", title: "Ratujmy Co Się Da - Budka Suflera" },
         { category: "Bajm", query: "Biala Armia", title: "Biala Armia - Bajm" },
         { category: "Bajm", query: "Co Mi Panie Dasz", title: "Co Mi Panie Dasz - Bajm" },
         { category: "Bajm", query: "Piechotą Do Lata", title: "Piechotą Do Lata - Bajm" },
@@ -1316,7 +1346,7 @@
         { category: "Tom Jones", query: "Green Green Grass of Home", title: "Green Green Grass of Home - Tom Jones" },
         { category: "Stevie Wonder", query: "I Just Called to Say I Love You", title: "I Just Called to Say I Love You - Stevie Wonder" },
         { category: "Stevie Wonder", query: "Superstition", title: "Superstition - Stevie Wonder" },
-        { category: "Stevie Wonder", query: "Isn't She Lovely", title: "Isn't She Lovely - Stevie Wonder" },
+        { category: "Stevie Wonder", query: "Isn't She Lovely", title: "Isn't标志 She Lovely - Stevie Wonder" },
         { category: "Ray Charles", query: "Hit the Road Jack", title: "Hit the Road Jack - Ray Charles" },
         { category: "Ray Charles", query: "I Got a Woman", title: "I Got a Woman - Ray Charles" },
         { category: "Aretha Franklin", query: "Respect", title: "Respect - Aretha Franklin" },
@@ -1328,7 +1358,7 @@
         { category: "Agnieszka Chylińska", query: "Kiedy Przyjdziesz Do Mnie", title: "Kiedy Przyjdziesz Do Mnie - Agnieszka Chylinska" },
         { category: "Męskie Granie Orkiestra", query: "Początek", title: "Początek - Męskie Granie Orkiestra" },
         { category: "Męskie Granie Orkiestra", query: "Supermoce", title: "Supermoce - Męskie Granie Orkiestra" },
-        { category: "Męskie Granie Orkiestra", query: "I Ciebie też, bardzo", title: "I Ciebie też, bardzo - Męskie Granie Orkiestra" },
+        { category: "Męskie Granie Orkiestra", query: "I Ciebie też, bardzo", title: "I标志 Ciebie też, bardzo - Męskie Granie Orkiestra" },
         { category: "Ralph Kaminski", query: "Kosmiczne energie", title: "Kosmiczne energie - Ralph Kaminski & Męskie Granie Orkiestra" },
         { category: "The Police", query: "Every Breath You Take", title: "Every Breath You Take - The Police" },
         { category: "The Police", query: "Roxanne", title: "Roxanne - The Police" },
@@ -1341,7 +1371,7 @@
         { category: "Zdzisława Sośnicka", query: "Będzie, Co Ma Być", title: "Będzie, Co Ma Być - Zdzisława Sośnicka" },
         { category: "Urszula Sipińska", query: "Są takie dni w tygodniu", title: "Są takie dni w tygodniu - Urszula Sipinska" },
         { category: "Urszula Sipińska", query: "To Był Świat W Zupełnie Starym Stylu", title: "To Był Świat W Zupełnie Starym Stylu - Urszula Sipinska" },
-        { category: "Marek Grechuta", query: "Bedziesz Moją标志 Panią", title: "Bedziesz Moją Panią - Marek Grechuta & Anawa" },
+        { category: "Marek Grechuta", query: "Bedziesz Moją Panią", title: "Bedziesz Moją Panią - Marek Grechuta & Anawa" },
         { category: "Marek Grechuta", query: "Nie Dokazuj", title: "Nie Dokazuj - Marek Grechuta & Anawa" },
         { category: "Marek Grechuta", query: "Świecie Nasz", title: "Świecie Nasz - Marek Grechuta" },
         { category: "Grzegorz Turnau", query: "Cichosza", title: "Cichosza - Grzegorz Turnau" },
@@ -1357,7 +1387,7 @@
         { category: "Hey", query: "Mimo Wszystko", title: "Mimo Wszystko - Hey" },
         { category: "Hey", query: "Cisza, Ja i Czas", title: "Cisza, Ja i Czas - Hey" },
         { category: "Michał Bajor", query: "Nie chcę więcej", title: "Nie chcę więcej - Michał Bajor" },
-        { category: "Anna Maria Jopek", query: "Timbuktu", title: "Timbuktu - Anna Maria Jopek, Marcin Pospieszalski & Mateusz Pospieszalski" },
+        { category: "Anna Maria Jopek", query: "Timbuktu", title: "Timbuktu - Anna Maria标志 Jopek, Marcin Pospieszalski & Mateusz Pospieszalski" },
         { category: "Stanisław Soyka", query: "Tolerancja / Na Mily Bog", title: "Tolerancja / Na Mily Bog - Stanislaw Soyka & Janusz Iwanski Yanina" },
         { category: "Karel Gott", query: "Lady Carneval", title: "Lady Carneval - Karel Gott" },
         { category: "Britney Spears", query: "...Baby One More Time", title: "...Baby One More Time - Britney Spears" },
@@ -1375,7 +1405,7 @@
         { category: "Budka Suflera", query: "Sen O Dolinie", title: "Sen O Dolinie - Budka Suflera" },
         { category: "Budka Suflera", query: "Nie Wierz Nigdy Kobiecie", title: "Nie Wierz Nigdy Kobiecie - Budka Suflera" },
         { category: "2 Plus 1", query: "Chodź, pomaluj mój świat", title: "Chodź, pomaluj mój świat - 2 Plus 1" },
-        { category: "2 Plus 1", query: "Lekkoduch", title: "Lekkoduch -标志 Pięć Dwa, Hans Solo & Deep" },
+        { category: "2 Plus 1", query: "Lekkoduch", title: "Lekkoduch - Pięć Dwa, Hans Solo & Deep" },
         { category: "2 Plus 1", query: "Słońca", title: "Słońca - Dwa plus Jeden" },
         { category: "2 Plus 1", query: "Requiem dla samej siebie", title: "Requiem dla samej siebie - 2 Plus 1" },
         { category: "Kasia Sobczyk", query: "O mnie się nie martw", title: "O mnie się nie martw - Katarzyna Sobczyk" },
@@ -1408,7 +1438,7 @@
         { category: "Phil Collins", query: "Against All Odds", title: "Against All Odds - Phil Collins" },
         { category: "Scorpions", query: "Wind of Change", title: "Wind of Change - Scorpions" },
         { category: "Scorpions", query: "Send Me an Angel", title: "Send Me an Angel - Scorpions" },
-        { category: "Scorpions", query: "Still Loving You", title: "Still Loving You - Scorpions" },
+        { category: "Still Loving You", query: "Still Loving You", title: "Still Loving You - Scorpions" },
         { category: "Europe", query: "Carrie", title: "Carrie - Europe" },
         { category: "Mr. Big", query: "To Be with You", title: "To Be with You - Mr. Big" },
         { category: "Ryan Paris", query: "Dolce Vita", title: "Dolce Vita - Ryan Paris" },
@@ -1457,7 +1487,7 @@
         { category: "Mr. President", query: "Coco Jamboo", title: "Coco Jamboo - Mr. President" },
         { category: "Loona", query: "Bailando", title: "Bailando - Loona" },
         { category: "Corona", query: "The Rhythm Of The Night", title: "The Rhythm Of The Night - Corona" },
-        { category: "Michel Teló", query: "Ai Se Eu Te Pego", title: "Ai标志 Se Eu Te Pego - Michel Teló" },
+        { category: "Michel Teló", query: "Ai Se Eu Te Pego", title: "Ai Se Eu Te Pego - Michel Teló" },
         { category: "Juanes", query: "La Camisa Negra", title: "La Camisa Negra - Juanes" },
         { category: "Gusttavo Lima", query: "Balada", title: "Balada - Gusttavo Lima" },
         { category: "Sistars", query: "Sutra", title: "Sutra - Sistars" },
@@ -1483,7 +1513,7 @@
         { category: "Paul Anka", query: "Diana", title: "Diana - Paul Anka" },
         { category: "Dean Martin", query: "That's Amore", title: "That's Amore - Dean Martin" },
         { category: "Paktofonika", query: "Chwile Ulotne", title: "Chwile Ulotne - Paktofonika" },
-        { category: "Kaliber 44", query: "Normalnie O Tej Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
+        { category: "Kaliber 44", query: "Normalnie O Tej Porze", title: "Normalnie O标志 Tej Porze - JIMEK & Kaliber 44" },
         { category: "Liroy", query: "Moja Autobiografia", title: "Moja Autobiografia - Liroy" },
         { category: "WWO", query: "Każdy ponad każdym", title: "Każdy ponad każdym - White House, Sokół & WWO" },
         { category: "Michael Jackson", query: "Man in the Mirror", title: "Man in the Mirror - Michael Jackson" },
@@ -1514,7 +1544,7 @@
         { category: "Bad Boys Blue", query: "You're a Woman", title: "You're a Woman - Bad Boys Blue" },
         { category: "Bad Boys Blue", query: "Pretty Young Girl", title: "Pretty Young Girl - Bad Boys Blue" },
         { category: "C.C. Catch", query: "Cause You Are Young", title: "Cause You Are Young - C.C. Catch" },
-        { category: "C.C. Catch", query: "I Can Lose My Heart Tonight", title: "I Can Lose My Heart Tonight - C.C. Catch" },
+        { category: "C.C. Catch", query: "I Can Lose My Heart Tonight", title: "I Can标志 Lose My Heart Tonight - C.C. Catch" },
         { category: "Fancy", query: "Flames of Love", title: "Flames of Love - Fancy" },
         { category: "F.R. David", query: "Words", title: "Words - F.R. David" },
         { category: "Bryan Adams", query: "I Do It for You", title: "I Do It for You - Bryan Adams" },
@@ -1557,7 +1587,7 @@
         { category: "After Party", query: "Tylko Ona Jedyna", title: "Tylko Ona Jedyna - After Party" },
         { category: "Piękni i Młodzi", query: "Niewiara", title: "Niewiara - Piękni I Młodzi" },
         { category: "Playboys", query: "Lejde", title: "Lejde - Playboys" },
-        { category: "Riccardo Fogli", query: "Storie Di Tutti I标志 Giorni", title: "Storie Di Tutti I Giorni - Riccardo Fogli" },
+        { category: "Riccardo Fogli", query: "Storie Di Tutti I Giorni", title: "Storie Di Tutti I Giorni - Riccardo Fogli" },
         { category: "Gigliola Cinquetti", query: "Non Ho L' Eta'", title: "Non Ho L' Eta' - Gigliola Cinquetti" },
         { category: "Desireless", query: "Voyage voyage Desireless", title: "Voyage voyage - Desireless" },
         { category: "ZAZ", query: "Je veux", title: "Je veux - ZAZ" },
@@ -1663,7 +1693,7 @@
         { category: "Piękni i Młodzi", query: "Drama", title: "Drama - Magdalena Narożna & Piękni I Młodzi" },
         { category: "Justin Bieber", query: "Sorry", title: "Sorry - Justin Bieber" },
         { category: "Justin Bieber", query: "Love Yourself", title: "Love Yourself - Justin Bieber" },
-        { category: "Pitbull", query: "Timber", title: "Timber - Pitbull & Kesha" },
+        { category: "Pitbull", query: "Timber", title: "Timber - Pitbull &标志 Kesha" },
         { category: "Pitbull", query: "Give Me Everything", title: "Give Me Everything - Pitbull" },
         { category: "Pitbull", query: "I Know You Want Me", title: "I Know You Want Me - Pitbull" },
         { category: "Rihanna", query: "Don't Stop the Music", title: "Don't Stop the Music - The Treblemakers" },
@@ -1709,7 +1739,7 @@
         { category: "Ed Sheeran", query: "Thinking Out Loud", title: "Thinking Out Loud - Ed Sheeran" },
         { category: "Wilki", query: "Eli Lama Sabachtani", title: "Eli Lama Sabachtani - Wilki" },
         { category: "Wojciech Gąssowski", query: "Jeszcze W Zielone Gramy", title: "Jeszcze W Zielone Gramy - Wojciech Młynarski" },
-        { category: "Journey", query: "Don't Stop Believin'", title: "Don't标志 Stop Believin' - Journey" },
+        { category: "Journey", query: "Don't Stop Believin'", title: "Don't Stop Believin' - Journey" },
         { category: "Guns N' Roses", query: "Sweet Child O' Mine", title: "Sweet Child O' Mine - Guns N' Roses" },
         { category: "AC/DC", query: "Thunderstruck", title: "Thunderstruck - AC/DC" },
         { category: "AC/DC", query: "Highway to Hell", title: "Highway to Hell - AC/DC" },
