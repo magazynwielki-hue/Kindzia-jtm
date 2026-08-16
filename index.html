@@ -388,6 +388,67 @@
         .btn-split-lang:active { transform: scale(0.95); }
         .status-msg { color: #8ecae6; font-size: 13px; margin-bottom: 3px; font-style: italic; }
         .status-msg button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
+
+        /* ============================================================
+           MOBILE ONLY — FIX PEŁNEGO TŁA / ANIMACJI DO SAMEGO DOŁU
+           PC/DESKTOP NIE JEST TYM BLOKIEM DOTKNIĘTY.
+           ============================================================ */
+        @media (max-width: 767px) {
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                min-height: 100%;
+                min-height: 100dvh;
+                overflow: hidden;
+                background: #020611;
+            }
+
+            /* Warstwa tła jest fixed i ma własny stacking context.
+               Dzięki temu nie kończy się razem z wysokością starego 100vh. */
+            body::before {
+                position: fixed;
+                top: -18vh;
+                right: -18vw;
+                bottom: -18vh;
+                left: -18vw;
+                width: auto;
+                height: auto;
+                min-height: 136dvh;
+                background: radial-gradient(
+                    circle at center,
+                    #0a192f 0%,
+                    #04101f 48%,
+                    #020611 100%
+                );
+                z-index: 0;
+            }
+
+            /* Animacje studia są warstwą nad tłem, ale pod kartą.
+               Overscan sprawia, że żaden efekt nie "dobija" do końca
+               dokładnie na krawędzi viewportu. */
+            #fxCanvas {
+                position: fixed;
+                top: -90px;
+                left: -90px;
+                width: calc(100vw + 180px);
+                height: calc(100dvh + 180px);
+                min-height: calc(100vh + 180px);
+                max-width: none;
+                max-height: none;
+                display: block;
+                pointer-events: none;
+                z-index: 1;
+            }
+
+            .card {
+                z-index: 10;
+            }
+
+            .home-btn {
+                z-index: 99999;
+            }
+        }
     </style>
 </head>
 <body>
@@ -608,11 +669,62 @@
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', resizeCanvas);
 
+    // iOS Safari / Android: zmiana wysokości widocznego viewportu
+    // (np. pasek adresu) nie zawsze wywołuje zwykły resize.
+    if (
+        window.visualViewport &&
+        window.matchMedia('(max-width: 767px)').matches
+    ) {
+        window.visualViewport.addEventListener('resize', resizeCanvas);
+    }
+
     function resizeCanvas() {
-        const w = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0, screen.width || 0);
-        const h = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0, screen.height || 0);
+        const isMobile = window.matchMedia('(max-width: 767px)').matches;
+
+        if (isMobile) {
+            /*
+             * MOBILE:
+             * Nie używamy screen.height ani "max(...)", bo na iOS/Android
+             * screen.height nie jest wysokością aktualnie widocznego viewportu.
+             * To właśnie potrafi zostawić pusty/ciemny pas na dole.
+             *
+             * visualViewport.height = realnie widoczny obszar przeglądarki.
+             * Canvas dostaje dokładnie ten wymiar + 180 px overscanu,
+             * zgodny z mobilnym CSS (top/left -90 px).
+             */
+            const viewportW =
+                (window.visualViewport && window.visualViewport.width) ||
+                window.innerWidth ||
+                document.documentElement.clientWidth ||
+                0;
+
+            const viewportH =
+                (window.visualViewport && window.visualViewport.height) ||
+                window.innerHeight ||
+                document.documentElement.clientHeight ||
+                0;
+
+            canvas.width = Math.ceil(viewportW + 180);
+            canvas.height = Math.ceil(viewportH + 180);
+            return;
+        }
+
+        /*
+         * DESKTOP — zachowujemy dotychczasowe zachowanie 1:1.
+         */
+        const w = Math.max(
+            window.innerWidth || 0,
+            document.documentElement.clientWidth || 0,
+            screen.width || 0
+        );
+        const h = Math.max(
+            window.innerHeight || 0,
+            document.documentElement.clientHeight || 0,
+            screen.height || 0
+        );
+
         canvas.width = w;
-        canvas.height = h + 150; // +150px zapasu, aby nutki nie ścinały się na dole obudowy
+        canvas.height = h + 150;
     }
 
     let particles = [];
