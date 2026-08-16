@@ -407,8 +407,6 @@
 
         <button id="stopBtn" class="btn-stop" onclick="stopMusic()" disabled>⛔ STOP!</button>
 
-        <button id="retryBtn" class="btn-action" style="display: none; background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);" onclick="retrySong()">🔁 Spróbuj ponownie</button>
-
         <button id="revealBtn" class="btn-action" style="display: none;" onclick="revealAnswer()">👁 Sprawdź odpowiedź</button>
 
         <div id="answerBox" class="answer-box">
@@ -1750,7 +1748,6 @@
     const moneyDisplay = document.getElementById('moneyDisplay');
     const stopBtn = document.getElementById('stopBtn');
     const revealBtn = document.getElementById('revealBtn');
-    const retryBtn = document.getElementById('retryBtn');
     const answerBox = document.getElementById('answerBox');
     const statusMsg = document.getElementById('statusMsg');
     const progressBar = document.getElementById('progressBar');
@@ -2010,10 +2007,7 @@
             if (!isPlayed) {
                 btn.onclick = () => startSong(item);
                 // Nie blokujemy renderowania; próbka ładuje się w tle.
-                // Rozłożone w czasie, żeby nie odpalać naraz kilku
-                // równoczesnych zapytań JSONP do iTunes (to potrafiło
-                // spowalniać/blokować właściwe zapytanie po kliknięciu).
-                setTimeout(() => prefetchSongPreview(item), index * 400);
+                prefetchSongPreview(item);
             }
             list.appendChild(btn);
         });
@@ -2373,36 +2367,7 @@
         }
     }
 
-    // Odblokowuje element <audio> w telefonie. MUSI być wywoływane
-    // SYNCHRONICZNIE, w tej samej klatce co gest użytkownika (kliknięcie),
-    // zanim wykonamy jakikolwiek "await" (np. zapytanie do iTunes).
-    //
-    // iOS Safari (i w mniejszym stopniu Chrome na Androidzie) zezwala na
-    // audio.play() bez interakcji użytkownika TYLKO jeśli dany element
-    // <audio> był już wcześniej odtworzony w reakcji na prawdziwy gest.
-    // Jeżeli między kliknięciem a audio.play() wystąpi await (np. na
-    // wynik z iTunes JSONP), przeglądarka uznaje gest za "wygasły" i
-    // odrzuca play() błędem NotAllowedError - stąd objaw "kliknięcie jest,
-    // dźwięku nie ma". Odtworzenie krótkiej ciszy TERAZ, zanim zaczniemy
-    // czekać na sieć, "odblokowuje" element na resztę sesji.
-    function unlockAudioElement() {
-        if (audioUnlocked) return;
-        try {
-            audio.src = MOBILE_SILENCE_WAV;
-            const p = audio.play();
-            if (p && typeof p.catch === 'function') p.catch(() => {});
-            audioUnlocked = true;
-        } catch (e) {
-            // Brak odblokowania nie jest błędem krytycznym - spróbujemy
-            // i tak odtworzyć właściwy plik, gdy będzie gotowy.
-        }
-    }
-
-    async function startSong(song) {
-        // To wywołanie MUSI być pierwszą rzeczą w funkcji - przed
-        // resetReviewState/inne await - żeby zdążyć zanim gest wygaśnie.
-        unlockAudioElement();
-
+    async function startSong(song, isRetry = false) {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
         resetFullPreviewState();
@@ -2415,7 +2380,6 @@
 
         answerBox.style.display = 'none';
         revealBtn.style.display = 'none';
-        if (retryBtn) retryBtn.style.display = 'none';
         stopBtn.disabled = true;
         progressBar.style.width = "0%";
 
@@ -2449,17 +2413,7 @@
                     ? "Nie udało się załadować lokalnego pliku MP3."
                     : "Nie udało się odtworzyć próbki audio z iTunes."
             );
-
-            // Prawdziwy nowy klik na "Spróbuj ponownie" to świeży gest
-            // użytkownika, więc audio.play() ma ponownie pełne prawa.
-            if (retryBtn) retryBtn.style.display = 'block';
         }
-    }
-
-    function retrySong() {
-        if (!selectedSong) return;
-        if (retryBtn) retryBtn.style.display = 'none';
-        startSong(selectedSong);
     }
 
     const stopReactionSounds = [
