@@ -22,59 +22,57 @@
             padding: 0; 
             touch-action: manipulation; 
         }
-        html { 
-            background: radial-gradient(circle at center, #0a192f 0%, #020611 100%) no-repeat center center fixed;
-            background-color: #020611; 
-            width: 100%; 
-            height: 100%; 
-            height: 100dvh;
-            overflow: hidden; 
+        
+        /* ZRESETOWANIE MARGINESÓW I PEŁNA BLOKADA EKRANU */
+        html, body {
+            width: 100%;
+            height: 100%;
+            position: fixed; /* Absolutna blokada scrollowania na iOS/PC */
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow: hidden;
             overscroll-behavior: none;
-            -webkit-text-size-adjust: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #020611;
         }
+
+        /* NIESKOŃCZONE TŁO (wypuszczone za ekran, likwiduje odcięcie na dole) */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -100px; left: -100px; right: -100px; bottom: -100px; /* Gradient wychodzi poza fizyczny ekran */
+            background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
+            z-index: -2;
+            pointer-events: none;
+        }
+
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            background: radial-gradient(circle at center, #0a192f 0%, #020611 100%) no-repeat center center fixed;
-            background-color: #020611;
             color: #ffffff;
             display: flex;
             justify-content: center;
-            align-items: center;
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            min-height: 100vh;
-            min-height: 100dvh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            margin: 0;
-            padding: env(safe-area-inset-top, 15px) env(safe-area-inset-right, 15px) env(safe-area-inset-bottom, 15px) env(safe-area-inset-left, 15px);
-            overflow: hidden;
-            overscroll-behavior: none;
-            touch-action: manipulation;
+            align-items: center; /* Idealne geometryczne wyśrodkowanie karty */
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
         }
+
+        /* POWIĘKSZONY CANVAS (żeby animacje nutek nie ścinały się na krawędzi obudowy) */
         #fxCanvas { 
-            position: fixed; 
-            top: 0; 
+            position: absolute; 
+            top: -50px; 
             left: 0; 
-            right: 0;
-            bottom: 0;
             width: 100vw; 
-            height: 100vh; 
-            height: 100dvh; 
+            height: calc(100vh + 150px); /* O wiele wyższy niż ekran */
             pointer-events: none; 
-            z-index: 1; 
+            z-index: -1; 
         }
+
+        /* PRZYCISK HOME DOPASOWANY DO NOTCHA */
         .home-btn {
-            position: fixed;
-            top: max(15px, env(safe-area-inset-top));
-            left: max(15px, env(safe-area-inset-left));
+            position: absolute;
+            top: max(20px, env(safe-area-inset-top));
+            left: max(20px, env(safe-area-inset-left));
             z-index: 99999;
             background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(8px);
@@ -91,19 +89,23 @@
             -webkit-tap-highlight-color: transparent;
         }
         .home-btn:active { transform: scale(0.88); background: rgba(220, 38, 38, 0.85); border-color: #ff4d4d; }
+
         .card {
             background: rgba(15, 23, 42, 0.88);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 30px 20px;
             border-radius: 24px;
             box-shadow: 0 0 50px rgba(0, 180, 216, 0.3);
+            width: 92%; /* Dynamiczna szerokość zamiast twardych paddingów */
             max-width: 480px;
-            width: 100%;
+            max-height: 88vh; /* Nigdy nie przykryje notcha i dolnego paska */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             text-align: center;
             backdrop-filter: blur(12px);
             position: relative;
             z-index: 10;
-            margin: auto;
+            padding: 30px 20px;
             transition: filter 0.8s ease-in-out, opacity 0.8s ease-in-out, transform 0.6s ease-in-out;
         }
         .blur-effect { filter: blur(15px); opacity: 0.2; }
@@ -181,62 +183,23 @@
             100% { transform: translateY(-12px) rotate(6deg) scale(1.04); }
         }
 
-        /* SPECJALNE DOPASOWANIE DLA TELEFONÓW (WYŚRODKOWANIE + PEŁNY EKRAN) */
         @media (max-width: 480px) {
-            body {
-                padding-top: max(10px, env(safe-area-inset-top));
-                padding-bottom: max(10px, env(safe-area-inset-bottom));
-                padding-left: max(12px, env(safe-area-inset-left));
-                padding-right: max(12px, env(safe-area-inset-right));
-            }
             .card {
-                padding: 22px 16px;
-                border-radius: 22px;
-                max-height: 88dvh;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
+                padding: 20px 14px; /* Kompaktowy padding na mniejszych ekranach */
+                max-height: 92vh; /* Dodatkowa przestrzeń w pionie */
             }
-            h1 {
-                font-size: 23px;
-                margin-bottom: 14px;
-            }
-            .menu-grid {
-                gap: 10px;
-                margin-top: 6px;
-            }
-            .menu-btn {
-                padding: 14px 12px;
-            }
-            .menu-btn-title {
-                font-size: 18px;
-            }
-            .categories-grid {
-                gap: 8px;
-                margin-bottom: 12px;
-            }
-            .cat-btn {
-                padding: 11px 14px;
-                font-size: 14.5px;
-            }
-            .money-number {
-                font-size: 36px;
-            }
-            .money-wrapper {
-                margin: 10px 0;
-            }
-            .category-pill {
-                font-size: 16px;
-                padding: 8px 18px;
-                margin: 8px 0 12px 0;
-            }
-            .btn-stop {
-                padding: 13px;
-                font-size: 18px;
-            }
+            h1 { font-size: 23px; margin-bottom: 14px; }
+            .menu-grid { gap: 10px; margin-top: 6px; }
+            .menu-btn { padding: 14px 12px; }
+            .menu-btn-title { font-size: 18px; }
+            .categories-grid { gap: 8px; margin-bottom: 12px; }
+            .cat-btn { padding: 11px 14px; font-size: 14.5px; }
+            .money-number { font-size: 36px; }
+            .money-wrapper { margin: 10px 0; }
+            .category-pill { font-size: 16px; padding: 8px 18px; margin: 8px 0 12px 0; }
+            .btn-stop { padding: 13px; font-size: 18px; }
             .btn-action, .feedback-btn, .btn-speaker-main, .btn-split-lang {
-                padding: 10px 12px;
-                font-size: 14px;
+                padding: 10px 12px; font-size: 14px;
             }
             .robert-speech-container { transform: translateX(-18%); }
             .dancing-robert { width: 140px; height: 180px; }
@@ -367,9 +330,11 @@
         .reload-icon { display: inline-block; }
         .spin-anim { animation: spin 0.4s ease-in-out; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         .answer-box {
             background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 12px; border-radius: 12px; margin-top: 12px; display: none;
+            overflow-y: auto;
         }
         .answer-title { font-size: 18px; font-weight: bold; color: #ffb703; margin-top: 3px; }
         .btn-action {
@@ -647,7 +612,7 @@
         const w = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0, screen.width || 0);
         const h = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0, screen.height || 0);
         canvas.width = w;
-        canvas.height = h;
+        canvas.height = h + 150; // +150px zapasu, aby nutki nie ścinały się na dole obudowy
     }
 
     let particles = [];
@@ -676,7 +641,7 @@
         const notesSymbols = ['♪', '♫', '♬', '♩'];
         musicNotes.push({
             x: Math.random() * canvas.width,
-            y: canvas.height + 40,
+            y: canvas.height + 20, // Start z ukrytej, przedłużonej na dole strefy
             vy: Math.random() * 2.5 + 1.8,
             vx: (Math.random() - 0.5) * 2,
             alpha: 1,
@@ -1032,7 +997,7 @@
         { category: "Haddaway", query: "What Is Love", title: "What Is Love - Haddaway" },
         { category: "Ace of Base", query: "All That She Wants", title: "All That She Wants - Ace of Base" },
         { category: "Pectus", query: "Barcelona", title: "Barcelona - Pectus" },
-        { category: "Pectus", query: "To Co Chciałbym Ci Dać", title: "To标志 Chciałbym Ci Dać - Pectus" },
+        { category: "Pectus", query: "To Co Chciałbym Ci Dać", title: "To Co Chciałbym Ci Dać - Pectus" },
         { category: "Enej", query: "Kamien Z Napisem Love", title: "Kamien Z Napisem Love - Enej" },
         { category: "Enej", query: "Skrzydlate Ręce", title: "Skrzydlate Ręce - Enej" },
         { category: "Enej", query: "Radio Hello", title: "Radio Hello - Enej" },
@@ -1126,7 +1091,7 @@
         { category: "Varius Manx", query: "Zanim Zrozumiesz", title: "Zanim Zrozumiesz - Kasia Stankiewicz & Varius Manx" },
         { category: "Varius Manx", query: "Orła Cień", title: "Orła Cień - Kasia Stankiewicz & Varius Manx" },
         { category: "Maryla Rodowicz", query: "Dziś Prawdziwych Cyganów Już Nie Ma", title: "Dziś Prawdziwych Cyganów Już Nie Ma - Maryla Rodowicz" },
-        { category: "Bajm", query: "Józek, Nie Daruje Ci标志 Nocy", title: "Józek, Nie Daruje Ci Tej Nocy - Bajm" },
+        { category: "Bajm", query: "Józek, Nie Daruje Ci Tej Nocy", title: "Józek, Nie Daruje Ci Tej Nocy - Bajm" },
         { category: "Wilki", query: "Baśka", title: "Baśka - Wilki" },
         { category: "Kayah", query: "Prawy do lewego", title: "Prawy do lewego - Goran Bregović & Kayah" },
         { category: "Kayah", query: "Śpij kochanie, śpij", title: "Śpij kochanie, śpij - Goran Bregović & Kayah" },
@@ -1228,7 +1193,7 @@
         { category: "Budka Suflera", query: "Ratujmy Co Się Da", title: "Ratujmy Co Się Da - Budka Suflera" },
         { category: "Bajm", query: "Biala Armia", title: "Biala Armia - Bajm" },
         { category: "Bajm", query: "Co Mi Panie Dasz", title: "Co Mi Panie Dasz - Bajm" },
-        { category: "Piechotą Do Lata", query: "Piechotą Do Lata", title: "Piechotą Do Lata - Bajm" },
+        { category: "Bajm", query: "Piechotą Do Lata", title: "Piechotą Do Lata - Bajm" },
         { category: "Bajm", query: "Szklanka Wody", title: "Szklanka Wody - Bajm" },
         { category: "Bajm", query: "Nie Ma Wody Na Pustyni", title: "Nie Ma Wody Na Pustyni - Bajm" },
         { category: "Dżem", query: "Wehikul Czasu To Bylby Cud", title: "Wehikul Czasu To Bylby Cud - Dżem" },
@@ -1574,7 +1539,7 @@
         { category: "Maanam", query: "Parada Sloni I Roza", title: "Parada Sloni I Roza - Maanam" },
         { category: "The Art Company", query: "Susanna", title: "Susanna - The Art Company" },
         { category: "Raffaella Carrà", query: "A far l'amore comincia tu", title: "A far l'amore comincia tu - Raffaella Carrà" },
-        { category: "Los标志 Lobos", query: "La Bamba", title: "La Bamba - Los Lobos" },
+        { category: "Los Lobos", query: "La Bamba", title: "La Bamba - Los Lobos" },
         { category: "Krzysztof Zalewski", query: "Miłość Miłość", title: "Miłość Miłość - Krzysztof Zalewski" },
         { category: "IGO", query: "Helena", title: "Helena - IGO" },
         { category: "Smolasty", query: "Duże oczy", title: "Duże oczy - Smolasty, Pedro & francis" },
@@ -1588,7 +1553,7 @@
         { category: "Paul Anka", query: "Diana", title: "Diana - Paul Anka" },
         { category: "Dean Martin", query: "That's Amore", title: "That's Amore - Dean Martin" },
         { category: "Paktofonika", query: "Chwile Ulotne", title: "Chwile Ulotne - Paktofonika" },
-        { category: "Kaliber 44", query: "Normalnie O标志 Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
+        { category: "Kaliber 44", query: "Normalnie O Tej Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
         { category: "Liroy", query: "Moja Autobiografia", title: "Moja Autobiografia - Liroy" },
         { category: "WWO", query: "Każdy ponad każdym", title: "Każdy ponad każdym - White House, Sokół & WWO" },
         { category: "Michael Jackson", query: "Man in the Mirror", title: "Man in the Mirror - Michael Jackson" },
@@ -1721,7 +1686,7 @@
         { category: "Bryan Adams", query: "Please Forgive Me", title: "Please Forgive Me - Bryan Adams" },
         { category: "Bon Jovi", query: "Always", title: "Always - Bon Jovi" },
         { category: "Madonna", query: "Frozen", title: "Frozen - Madonna" },
-        { category: "Tears for Fears", query: "Everybody Wants to Rule the World", title: "Everybody Wants to标志 the World - Tears for Fears" },
+        { category: "Tears for Fears", query: "Everybody Wants to Rule the World", title: "Everybody Wants to Rule the World - Tears for Fears" },
         { category: "Simple Minds", query: "Don't You", title: "Don't You - Simple Minds" },
         { category: "Cyndi Lauper", query: "Time After Time", title: "Time After Time - Cyndi Lauper" },
         { category: "The Police", query: "Walking On The Moon", title: "Walking On The Moon - The Police" },
@@ -1758,7 +1723,7 @@
         { category: "Culture Club", query: "Karma Chameleon", title: "Karma Chameleon - Culture Club" },
         { category: "The Cars", query: "Drive", title: "Drive - The Cars" },
         { category: "Supertramp", query: "The Logical Song", title: "The Logical Song - Supertramp" },
-        { category: "The标志 Moody Blues", query: "Nights In White Satin", title: "Nights In White Satin - The Moody Blues" },
+        { category: "The Moody Blues", query: "Nights In White Satin", title: "Nights In White Satin - The Moody Blues" },
         { category: "Nazareth", query: "Love Hurts", title: "Love Hurts - Nazareth" },
         { category: "Natalia Przybysz", query: "Miod", title: "Miod - Natalia Przybysz" },
         { category: "sanah", query: "hip hip hura!", title: "hip hip hura! - sanah" },
