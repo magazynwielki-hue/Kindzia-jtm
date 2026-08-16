@@ -2080,35 +2080,33 @@
             statusMsg.innerText = "Pobieranie utworu z iTunes...";
             const term = encodeURIComponent(`${song.category} ${song.query}`);
 
-            // Zabezpieczenie przez CORS Proxy, żeby iPhone nie blokował zapytania
-            const targetUrl = `https://itunes.apple.com/search?term=${term}&country=PL&media=music&limit=1`;
-            const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(targetUrl);
+            const fetchItunesData = async (url) => {
+                try {
+                    let res = await fetch(url);
+                    return await res.json();
+                } catch (e) {
+                    // Fallback na CORS proxy w razie blokady sieciowej / lokalnej / mobilnej
+                    let proxyRes = await fetch(`https://corsproxy.io/?` + encodeURIComponent(url));
+                    return await proxyRes.json();
+                }
+            };
 
-            fetch(proxyUrl)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
-                        launchPlayback(data.results[0].previewUrl, 0);
+            try {
+                let data = await fetchItunesData(`https://itunes.apple.com/search?term=${term}&country=PL&media=music&limit=1`);
+                if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+                    launchPlayback(data.results[0].previewUrl, 0);
+                } else {
+                    let fallbackData = await fetchItunesData(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
+                    if (fallbackData.results && fallbackData.results.length > 0 && fallbackData.results[0].previewUrl) {
+                        launchPlayback(fallbackData.results[0].previewUrl, 0);
                     } else {
-                        const fallbackUrl = `https://itunes.apple.com/search?term=${term}&media=music&limit=1`;
-                        const fallbackProxy = `https://corsproxy.io/?` + encodeURIComponent(fallbackUrl);
-                        
-                        fetch(fallbackProxy)
-                            .then(r => r.json())
-                            .then(fallbackData => {
-                                if (fallbackData.results && fallbackData.results.length > 0 && fallbackData.results[0].previewUrl) {
-                                    launchPlayback(fallbackData.results[0].previewUrl, 0);
-                                } else {
-                                    statusMsg.innerText = "Błąd: Nie znaleziono utworu w iTunes.";
-                                }
-                            })
-                            .catch(() => { statusMsg.innerText = "Błąd połączenia z iTunes API."; });
+                        statusMsg.innerText = "Błąd: Nie znaleziono utworu w iTunes.";
                     }
-                })
-                .catch(err => {
-                    console.error("Błąd iTunes:", err);
-                    statusMsg.innerText = "Błąd połączenia z iTunes API.";
-                });
+                }
+            } catch (err) {
+                console.error("Błąd iTunes:", err);
+                statusMsg.innerText = "Błąd połączenia z iTunes API.";
+            }
         }
     }
 
