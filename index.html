@@ -593,7 +593,7 @@
         let grad2 = ctx.createLinearGradient(canvas.width, 0, canvas.width / 2 - Math.sin(spotlightAngle) * 350, canvas.height);
         grad2.addColorStop(0, '#ffb703'); grad2.addColorStop(1, 'transparent');
         ctx.fillStyle = grad2;
-        ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width / 2 - Math.sin(spotlightAngle) * 450, canvas.height); ctx.lineTo(canvas.width, canvas.height); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width / 2 - Math.sin(spotlightAngle) * 450, canvas.height); ctx.lineTo(0, canvas.height); ctx.fill();
         ctx.restore();
 
         musicNotes.forEach((n, index) => {
@@ -1495,7 +1495,7 @@
         { category: "Cleo Lowcy gwiazd", query: "Łowcy Gwiazd", title: "Łowcy Gwiazd - Cleo" },
         { category: "Donatan Cleo My Slowianie", query: "My Słowianie", title: "My Słowianie - Cleo & Donatan" },
         { category: "Cleo Za krokiem krok", query: "Serce", title: "Serce - Cleo" },
-        { category: "The Verve Bitter Sweet Symphony", query: "Bitter Sweet Symphony", title: "Bitter Sweet Symphony - The标志Verve" },
+        { category: "The Verve Bitter Sweet Symphony", query: "Bitter Sweet Symphony", title: "Bitter Sweet Symphony - The Verve" },
         { category: "Radiohead Creep", query: "Creep", title: "Creep - Radiohead" },
         { category: "The Cranberries Zombie", query: "Zombie", title: "Zombie - The Cranberries" },
         { category: "Roxette Joyride", query: "Joyride", title: "Joyride - Roxette" },
@@ -1548,7 +1548,7 @@
         { category: "Patrycja Markowska Swiat sie pomylil", query: "Świat Się Pomylił", title: "Świat Się Pomylił - Patrycja Markowska" },
         { category: "Ania Dabrowska Tego chcialam", query: "Tego Chcialam", title: "Tego Chcialam - Ania Dąbrowska" },
         { category: "Ania Dabrowska Z Toba nie umiem wygrac", query: "Z Tobą Nie Umiem Wygrać", title: "Z Tobą Nie Umiem Wygrać - Ania Dąbrowska" },
-        { category: "Las Ketchup The Ketchup Song", query: "The Ketchup Song", title: "The标志Ketchup Song - Las Ketchup" },
+        { category: "Las Ketchup The Ketchup Song", query: "The Ketchup Song", title: "The Ketchup Song - Las Ketchup" },
         { category: "Gipsy Kings Volare", query: "Volare", title: "Volare - Gipsy Kings" },
         { category: "Gipsy Kings Bamboleo", query: "Bamboléo", title: "Bamboléo - Gipsy Kings" },
         { category: "Bellini Samba de Janeiro", query: "Samba de Janeiro", title: "Samba de Janeiro - Bellini" },
@@ -2077,7 +2077,22 @@
             statusMsg.innerText = "Ładowanie pliku MP3...";
             launchPlayback(song.audioSource, song.startSec || 0);
         } else {
-            statusMsg.innerText = "Błąd: Brak pliku audio dla tego utworu.";
+            // POBIERANIE PRÓBKI AUDIO Z ITUNES API
+            statusMsg.innerText = "Pobieranie utworu z iTunes...";
+            const term = encodeURIComponent(`${song.category} ${song.query}`);
+            fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+                        launchPlayback(data.results[0].previewUrl, 0);
+                    } else {
+                        statusMsg.innerText = "Błąd: Nie znaleziono utworu w iTunes.";
+                    }
+                })
+                .catch(err => {
+                    console.error("Błąd iTunes:", err);
+                    statusMsg.innerText = "Błąd połączenia z iTunes API.";
+                });
         }
     }
 
