@@ -402,22 +402,28 @@
              * Dlatego NIE opieramy dolnej krawędzi efektów na wysokości body.
              * Wszystko jest świadomie "wyciągnięte" kilkaset px poza ekran.
              */
+            /*
+             * PWA FIX: NIE KLIPUJEMY warstw na krawędzi body/html.
+             * W poprzedniej wersji overflow:hidden powodował dokładnie ten
+             * poziomy "szew" na dole: pseudo-element i canvas były większe,
+             * ale body je ucinało.
+             */
             html {
                 width: 100%;
                 min-width: 100%;
                 height: 100%;
                 min-height: 100%;
-                background: #020611;
-                overflow: hidden;
+                background: #020611 !important;
+                overflow: visible !important;
             }
 
             body {
                 width: 100%;
                 height: 100%;
                 min-height: 100%;
-                overflow: hidden;
-                background: #020611;
-                /* Nie pozwalamy flexowi przesunąć karty po zwiększeniu warstw tła. */
+                overflow: visible !important;
+                background: #020611 !important;
+                /* Body pozostaje tej samej wysokości, więc karta NIE zmienia pozycji. */
                 isolation: auto;
             }
 
@@ -429,10 +435,10 @@
             body::before {
                 content: '';
                 position: fixed !important;
-                top: -500px !important;
-                left: -500px !important;
-                right: -500px !important;
-                bottom: -500px !important;
+                top: -1000px !important;
+                left: -1000px !important;
+                right: -1000px !important;
+                bottom: calc(-1000px - env(safe-area-inset-bottom, 0px)) !important;
                 width: auto !important;
                 height: auto !important;
                 min-height: 0 !important;
@@ -454,10 +460,10 @@
              */
             #fxCanvas {
                 position: fixed !important;
-                top: -300px !important;
-                left: -300px !important;
-                right: -300px !important;
-                bottom: -300px !important;
+                top: -1000px !important;
+                left: -1000px !important;
+                right: -1000px !important;
+                bottom: calc(-1000px - env(safe-area-inset-bottom, 0px)) !important;
                 width: auto !important;
                 height: auto !important;
                 min-width: 0 !important;
@@ -471,6 +477,45 @@
 
             .card { z-index: 10; }
             .home-btn { z-index: 99999; }
+
+            /*
+             * iOS/Android PWA: viewport-fit=cover + safe area.
+             * Rozciągamy TYLKO warstwy wizualne poza layout viewport.
+             * Nie zwiększamy wysokości body, więc UI pozostaje na miejscu.
+             */
+            @supports (height: 100svh) {
+                body::before {
+                    min-height: calc(100svh + 2000px + env(safe-area-inset-bottom, 0px)) !important;
+                }
+            }
+
+            @media (display-mode: standalone) {
+                html, body {
+                    background: #020611 !important;
+                    overflow: visible !important;
+                }
+
+                body::before {
+                    bottom: calc(-1200px - env(safe-area-inset-bottom, 0px)) !important;
+                }
+
+                #fxCanvas {
+                    bottom: calc(-1200px - env(safe-area-inset-bottom, 0px)) !important;
+                }
+            }
+
+            /* iOS standalone nie obsługuje display-mode w każdej wersji tak samo. */
+            @supports (-webkit-touch-callout: none) {
+                body {
+                    overflow: visible !important;
+                }
+                body::before {
+                    bottom: calc(-1200px - env(safe-area-inset-bottom, 0px)) !important;
+                }
+                #fxCanvas {
+                    bottom: calc(-1200px - env(safe-area-inset-bottom, 0px)) !important;
+                }
+            }
         }
     </style>
 </head>
@@ -729,7 +774,7 @@
 
             // CSS ma overscan 300 px z każdej strony. Canvas musi mieć
             // dokładnie tę samą geometrię, inaczej pojawi się odcięcie.
-            const MOBILE_OVERSCAN = 600;
+            const MOBILE_OVERSCAN = 2200;
             canvas.width = Math.ceil(viewportW + MOBILE_OVERSCAN);
             canvas.height = Math.ceil(viewportH + MOBILE_OVERSCAN);
             return;
