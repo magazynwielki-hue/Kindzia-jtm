@@ -330,6 +330,7 @@
         .btn-lang-ang { background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         .btn-split-lang:active { transform: scale(0.95); }
         .status-msg { color: #8ecae6; font-size: 13px; margin-bottom: 3px; font-style: italic; }
+        .status-msg button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body>
@@ -449,7 +450,7 @@
     </div>
 </div>
 
-<audio id="audioPlayer" preload="auto"></audio>
+<audio id="audioPlayer" preload="auto" playsinline webkit-playsinline></audio>
 <audio id="introAudio" src="czolowka.mp3" preload="auto"></audio>
 <audio id="robertVoice" src="robert-voice.mp3" preload="auto"></audio>
 <audio id="stopReactionAudio" preload="auto"></audio>
@@ -2005,13 +2006,326 @@
             btn.innerHTML = `<span>${item.category}</span> <span>${isPlayed ? '✓' : '➔'}</span>`;
             if (!isPlayed) {
                 btn.onclick = () => startSong(item);
+                // Nie blokujemy renderowania; próbka ładuje się w tle.
+                prefetchSongPreview(item);
             }
             list.appendChild(btn);
         });
     }
 
-    async function startSong(song) {
+    // =========================================================================
+    // ODTWARZANIE AUDIO - WERSJA NAPRAWIONA DLA TELEFONÓW / SAFARI / CHROME
+    // =========================================================================
+
+    // iTunes zwraca krótkie preview audio. Nie wolno zakładać, że pierwszy
+    // wynik wyszukiwania jest właściwym utworem - dlatego wybieramy najlepsze
+    // dopasowanie po wykonawcy i tytule.
+    const ITUNES_CACHE_KEY = 'kindziu_itunes_preview_cache_v3';
+    const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14; // 14 dni
+    let audioUnlocked = false;
+    let audioRequestId = 0;
+
+    // Krótka cisza WAV. Jest używana tylko do "odblokowania" elementu audio
+    // podczas prawdziwego kliknięcia użytkownika. Nie zawiera żadnej muzyki.
+    const MOBILE_SILENCE_WAV =
+        'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YQAAAAAA';
+
+    function readItunesCache() {
+        try {
+            const raw = localStorage.getItem(ITUNES_CACHE_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function writeItunesCache(cache) {
+        try {
+            localStorage.setItem(ITUNES_CACHE_KEY, JSON.stringify(cache));
+        } catch (e) {
+            // Pełna funkcjonalność aplikacji nie zależy od localStorage.
+        }
+    }
+
+    function songCacheKey(song) {
+        return `${song.category}|||${song.query}`.toLowerCase().trim();
+    }
+
+    function getCachedPreview(song) {
+        const cache = readItunesCache();
+        const item = cache[songCacheKey(song)];
+        if (!item || !item.url) return null;
+        if (item.savedAt && Date.now() - item.savedAt > ITUNES_CACHE_TTL) return null;
+        return item.url;
+    }
+
+    function saveCachedPreview(song, url) {
+        if (!url) return;
+        const cache = readItunesCache();
+        cache[songCacheKey(song)] = { url, savedAt: Date.now() };
+        writeItunesCache(cache);
+    }
+
+    function normalizeText(value) {
+        return String(value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function tokenScore(a, b) {
+        const aa = normalizeText(a).split(' ').filter(Boolean);
+        const bb = new Set(normalizeText(b).split(' ').filter(Boolean));
+        if (!aa.length || !bb.size) return 0;
+        let hits = 0;
+        aa.forEach(t => { if (bb.has(t)) hits++; });
+        return hits / aa.length;
+    }
+
+    function scoreItunesResult(result, song) {
+        const artist = result.artistName || '';
+        const track = result.trackName || '';
+
+        const artistTarget = normalizeText(song.category);
+        const titleTarget = normalizeText(song.query);
+        const artistResult = normalizeText(artist);
+        const titleResult = normalizeText(track);
+
+        let score = 0;
+        if (artistResult === artistTarget) score += 100;
+        if (titleResult === titleTarget) score += 100;
+
+        score += tokenScore(song.category, artist) * 40;
+        score += tokenScore(song.query, track) * 60;
+
+        // Dodatkowe punkty za wystąpienie tytułu w pełnym opisie.
+        const full = `${artist} ${track}`.toLowerCase();
+        if (titleTarget && full.includes(titleTarget)) score += 35;
+        if (artistTarget && full.includes(artistTarget)) score += 25;
+
+        // Wyniki bez preview nie powinny wygrać.
+        if (!result.previewUrl) score -= 1000;
+
+        return score;
+    }
+
+    async function fetchJsonWithTimeout(url, timeoutMs = 9000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                cache: 'no-store',
+                signal: controller.signal,
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    async function fetchItunesResults(song) {
+        const term = encodeURIComponent(`${song.category} ${song.query}`);
+        const urls = [
+            `https://itunes.apple.com/search?term=${term}&country=PL&media=music&entity=song&limit=25`,
+            `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=25`
+        ];
+
+        let lastError = null;
+
+        // Najpierw bezpośrednio do Apple.
+        for (const url of urls) {
+            try {
+                const data = await fetchJsonWithTimeout(url);
+                if (data && Array.isArray(data.results)) return data.results;
+            } catch (e) {
+                lastError = e;
+            }
+        }
+
+        // Fallback tylko wtedy, gdy bezpośredni dostęp jest blokowany.
+        // To zabezpiecza starsze przeglądarki / nietypowe sieci mobilne.
+        for (const url of urls) {
+            try {
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+                const data = await fetchJsonWithTimeout(proxyUrl, 10000);
+                if (data && Array.isArray(data.results)) return data.results;
+            } catch (e) {
+                lastError = e;
+            }
+        }
+
+        throw lastError || new Error('Brak odpowiedzi iTunes');
+    }
+
+    async function resolveItunesPreview(song) {
+        const cached = getCachedPreview(song);
+        if (cached) return cached;
+
+        const results = await fetchItunesResults(song);
+        const candidates = results
+            .filter(r => r && r.previewUrl)
+            .sort((a, b) => scoreItunesResult(b, song) - scoreItunesResult(a, song));
+
+        if (!candidates.length) {
+            throw new Error('iTunes nie zwrócił previewUrl');
+        }
+
+        const best = candidates[0];
+        const url = best.previewUrl;
+
+        saveCachedPreview(song, url);
+        return url;
+    }
+
+    // Wywoływane z bezpośredniego kliknięcia. Dzięki temu telefon dostaje
+    // gest użytkownika zanim zakończy się asynchroniczne zapytanie do iTunes.
+    function unlockAudioFromUserGesture() {
+        if (audioUnlocked) return;
+
+        try {
+            audio.setAttribute('playsinline', '');
+            audio.setAttribute('webkit-playsinline', '');
+            audio.muted = true;
+            audio.src = MOBILE_SILENCE_WAV;
+
+            const promise = audio.play();
+            if (promise && typeof promise.then === 'function') {
+                promise.then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.muted = false;
+                    audioUnlocked = true;
+                }).catch(() => {
+                    audio.muted = false;
+                });
+            } else {
+                audio.pause();
+                audio.muted = false;
+                audioUnlocked = true;
+            }
+        } catch (e) {
+            audio.muted = false;
+        }
+    }
+
+    function setAudioStatusRetry(message) {
+        statusMsg.innerHTML = `
+            <span>${message}</span>
+            <button type="button"
+                    id="retryAudioBtn"
+                    style="margin-top:8px;padding:10px 14px;border-radius:10px;border:1px solid #00d4ff;background:#073b4c;color:#fff;font-weight:800;cursor:pointer;">
+                ▶ DOTKNIJ, ABY ODTWORZYĆ
+            </button>`;
+        const retryBtn = document.getElementById('retryAudioBtn');
+        if (retryBtn) {
+            retryBtn.onclick = () => {
+                unlockAudioFromUserGesture();
+                if (selectedSong) startSong(selectedSong, true);
+            };
+        }
+    }
+
+    function startRoundTimer() {
+        statusMsg.innerText = "Graj!";
+        stopBtn.disabled = false;
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            elapsedSeconds++;
+            finalAmount = (isReviewMode || currentRound === 1)
+                ? (100 + elapsedSeconds * 10)
+                : (200 - elapsedSeconds * 10);
+
+            moneyDisplay.innerText = finalAmount;
+
+            const progressPercent = (elapsedSeconds / 10) * 100;
+            progressBar.style.width = Math.min(progressPercent, 100) + "%";
+
+            if (elapsedSeconds >= 10) stopMusic(true);
+        }, 1000);
+    }
+
+    async function playResolvedAudio(srcUrl, startOffset = 0) {
+        currentPreviewUrl = srcUrl;
+        audio.pause();
+        audio.src = srcUrl;
+        audio.load();
+
+        // Czekamy na metadata, ale nie zakładamy, że autoplay będzie dozwolony.
+        await new Promise((resolve, reject) => {
+            let settled = false;
+
+            const cleanup = () => {
+                audio.removeEventListener('loadedmetadata', onMeta);
+                audio.removeEventListener('canplay', onCanPlay);
+                audio.removeEventListener('error', onError);
+            };
+
+            const done = () => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                resolve();
+            };
+
+            const onMeta = () => done();
+            const onCanPlay = () => done();
+            const onError = () => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                reject(new Error('Nie można załadować pliku audio'));
+            };
+
+            audio.addEventListener('loadedmetadata', onMeta, { once: true });
+            audio.addEventListener('canplay', onCanPlay, { once: true });
+            audio.addEventListener('error', onError, { once: true });
+
+            // Jeśli przeglądarka ma już metadata.
+            if (audio.readyState >= 1) done();
+        });
+
+        try {
+            audio.currentTime = Math.max(0, Number(startOffset) || 0);
+        } catch (e) {}
+
+        try {
+            await audio.play();
+            startRoundTimer();
+            return true;
+        } catch (e) {
+            console.warn('Autoplay zablokowany przez przeglądarkę:', e);
+            stopBtn.disabled = true;
+            setAudioStatusRetry("Utwór znaleziony. Telefon zablokował automatyczne odtwarzanie.");
+            return false;
+        }
+    }
+
+    // Prefetch dla kilku aktualnie pokazanych haseł. Dzięki temu po kliknięciu
+    // URL iTunes bardzo często jest już w cache i telefon dostaje audio szybciej.
+    async function prefetchSongPreview(song) {
+        if (!song || song.audioSource || getCachedPreview(song)) return;
+        try {
+            await resolveItunesPreview(song);
+        } catch (e) {
+            // To tylko prefetch - właściwa próba nastąpi po kliknięciu.
+            console.debug('Prefetch iTunes pominięty:', song.title, e);
+        }
+    }
+
+    async function startSong(song, isRetry = false) {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+        // NAJWAŻNIEJSZE: ta funkcja jest uruchamiana bezpośrednio z onclick
+        // przy pierwszym kliknięciu, więc próbujemy odblokować audio przed await.
+        if (!isRetry) unlockAudioFromUserGesture();
+
         resetFullPreviewState();
         selectedSong = song;
 
@@ -2019,7 +2333,7 @@
         document.getElementById('gameScreen').style.display = 'block';
         document.getElementById('currentCategory').innerText = song.category;
         homeBtn.style.display = 'flex';
-        
+
         answerBox.style.display = 'none';
         revealBtn.style.display = 'none';
         stopBtn.disabled = true;
@@ -2029,84 +2343,32 @@
         finalAmount = (isReviewMode || currentRound === 1) ? 100 : 200;
         moneyDisplay.innerText = finalAmount;
 
-        const launchPlayback = (srcUrl, startOffset = 0) => {
-            currentPreviewUrl = srcUrl;
-            audio.src = srcUrl;
+        const requestId = ++audioRequestId;
+        statusMsg.innerText = song.audioSource
+            ? "Ładowanie pliku MP3..."
+            : "Wyszukiwanie próbki w iTunes...";
 
-            const startRoundTimer = () => {
-                statusMsg.innerText = "Graj!";
-                stopBtn.disabled = false;
+        try {
+            let srcUrl = song.audioSource || null;
 
-                clearInterval(timerInterval);
-                timerInterval = setInterval(() => {
-                    elapsedSeconds++;
-                    finalAmount = (isReviewMode || currentRound === 1) ? (100 + elapsedSeconds * 10) : (200 - elapsedSeconds * 10);
-                    moneyDisplay.innerText = finalAmount;
-                    
-                    let progressPercent = (elapsedSeconds / 10) * 100;
-                    progressBar.style.width = Math.min(progressPercent, 100) + "%";
-
-                    if (elapsedSeconds >= 10) stopMusic(true);
-                }, 1000);
-            };
-
-            const onLoadedMeta = () => {
-                audio.currentTime = startOffset;
-                audio.play().then(() => {
-                    startRoundTimer();
-                }).catch(e => {
-                    statusMsg.innerText = "Dotknij ekranu, aby odtworzyć.";
-                });
-                audio.removeEventListener('loadedmetadata', onLoadedMeta);
-            };
-
-            if (audio.readyState >= 1) {
-                audio.currentTime = startOffset;
-                audio.play().then(() => {
-                    startRoundTimer();
-                }).catch(e => {
-                    statusMsg.innerText = "Dotknij ekranu, aby odtworzyć.";
-                });
-            } else {
-                audio.addEventListener('loadedmetadata', onLoadedMeta);
-                audio.load();
+            if (!srcUrl) {
+                srcUrl = await resolveItunesPreview(song);
             }
-        };
 
-        if (song.audioSource) {
-            statusMsg.innerText = "Ładowanie pliku MP3...";
-            launchPlayback(song.audioSource, song.startSec || 0);
-        } else {
-            statusMsg.innerText = "Pobieranie utworu z iTunes...";
-            const term = encodeURIComponent(`${song.category} ${song.query}`);
+            // Użytkownik mógł kliknąć już inne hasło podczas oczekiwania.
+            if (requestId !== audioRequestId || selectedSong !== song) return;
 
-            const fetchItunesData = async (url) => {
-                try {
-                    let res = await fetch(url);
-                    return await res.json();
-                } catch (e) {
-                    // Fallback na CORS proxy w razie blokady sieciowej / lokalnej / mobilnej
-                    let proxyRes = await fetch(`https://corsproxy.io/?` + encodeURIComponent(url));
-                    return await proxyRes.json();
-                }
-            };
+            await playResolvedAudio(srcUrl, song.startSec || 0);
+        } catch (err) {
+            console.error("Błąd audio:", err);
+            stopBtn.disabled = true;
+            clearInterval(timerInterval);
 
-            try {
-                let data = await fetchItunesData(`https://itunes.apple.com/search?term=${term}&country=PL&media=music&limit=1`);
-                if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
-                    launchPlayback(data.results[0].previewUrl, 0);
-                } else {
-                    let fallbackData = await fetchItunesData(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
-                    if (fallbackData.results && fallbackData.results.length > 0 && fallbackData.results[0].previewUrl) {
-                        launchPlayback(fallbackData.results[0].previewUrl, 0);
-                    } else {
-                        statusMsg.innerText = "Błąd: Nie znaleziono utworu w iTunes.";
-                    }
-                }
-            } catch (err) {
-                console.error("Błąd iTunes:", err);
-                statusMsg.innerText = "Błąd połączenia z iTunes API.";
-            }
+            setAudioStatusRetry(
+                song.audioSource
+                    ? "Nie udało się załadować lokalnego pliku MP3."
+                    : "Nie udało się pobrać próbki audio z iTunes."
+            );
         }
     }
 
@@ -2196,15 +2458,22 @@
 
     function toggleFullPreview() {
         const btn = document.getElementById('listenFullBtn');
-        if (!currentPreviewUrl) return;
+        if (!currentPreviewUrl || !selectedSong) return;
 
         if (!isFullPlaying) {
+            audio.pause();
             audio.src = currentPreviewUrl;
-            const startOffset = (selectedSong && selectedSong.startSec) ? selectedSong.startSec : 0;
+            audio.load();
 
-            const executeFullPlay = () => {
-                audio.currentTime = startOffset;
-                audio.play().then(() => {
+            const startOffset = (selectedSong && selectedSong.startSec)
+                ? selectedSong.startSec
+                : 0;
+
+            const executeFullPlay = async () => {
+                try {
+                    audio.currentTime = startOffset;
+                    await audio.play();
+
                     isFullPlaying = true;
                     btn.innerText = "⏹ Zatrzymaj odsłuch (30s)";
                     btn.style.background = "linear-gradient(180deg, #e74c3c 0%, #c0392b 100%)";
@@ -2213,16 +2482,20 @@
                     fullPreviewTimer = setTimeout(() => {
                         if (isFullPlaying) toggleFullPreview();
                     }, 30000);
-                }).catch(e => console.log('Błąd odsłuchu:', e));
+                } catch (e) {
+                    console.warn('Błąd pełnego odsłuchu:', e);
+                    setAudioStatusRetry("Próbka jest gotowa. Dotknij przycisku, aby rozpocząć odsłuch.");
+                }
             };
 
             if (audio.readyState >= 1) {
                 executeFullPlay();
             } else {
-                audio.addEventListener('loadedmetadata', function onMeta() {
-                    executeFullPlay();
+                const onMeta = () => {
                     audio.removeEventListener('loadedmetadata', onMeta);
-                });
+                    executeFullPlay();
+                };
+                audio.addEventListener('loadedmetadata', onMeta);
                 audio.load();
             }
         } else {
