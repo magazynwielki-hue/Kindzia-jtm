@@ -2129,38 +2129,93 @@
         }
     }
 
+    // ================================================================
+    // iTUNES: JSONP zamiast fetch()
+    // ================================================================
+    // UWAGA: iTunes Search API nie powinno być tutaj pobierane przez
+    // fetch() z przeglądarki. Apple opisuje JSONP (callback) dla zapytań
+    // cross-site. Na telefonach bezpośredni fetch potrafił kończyć się
+    // CORS-em, a aplikacja błędnie pokazywała wtedy "nie znaleziono".
+    function itunesJsonp(term, country = 'PL', timeoutMs = 10000) {
+        return new Promise((resolve, reject) => {
+            const callbackName = '__itunes_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+            const script = document.createElement('script');
+            let finished = false;
+
+            const cleanup = () => {
+                if (finished) return;
+                finished = true;
+                clearTimeout(timer);
+                try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+                if (script.parentNode) script.parentNode.removeChild(script);
+            };
+
+            const timer = setTimeout(() => {
+                cleanup();
+                reject(new Error('TIMEOUT_ITUNES'));
+            }, timeoutMs);
+
+            window[callbackName] = (data) => {
+                if (finished) return;
+                cleanup();
+                if (data && Array.isArray(data.results)) {
+                    resolve(data.results);
+                } else {
+                    reject(new Error('INVALID_ITUNES_RESPONSE'));
+                }
+            };
+
+            script.onerror = () => {
+                cleanup();
+                reject(new Error('ITUNES_NETWORK_ERROR'));
+            };
+
+            const params = new URLSearchParams({
+                term,
+                media: 'music',
+                entity: 'song',
+                limit: '25',
+                callback: callbackName
+            });
+            if (country) params.set('country', country);
+
+            script.async = true;
+            script.src = 'https://itunes.apple.com/search?' + params.toString();
+            document.head.appendChild(script);
+        });
+    }
+
     async function fetchItunesResults(song) {
-        const term = encodeURIComponent(`${song.category} ${song.query}`);
-        const urls = [
-            `https://itunes.apple.com/search?term=${term}&country=PL&media=music&entity=song&limit=25`,
-            `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=25`
+        const queries = [
+            `${song.category} ${song.query}`,
+            `${song.query} ${song.category}`,
+            `${song.query}`
         ];
 
         let lastError = null;
 
-        // Najpierw bezpośrednio do Apple.
-        for (const url of urls) {
+        // 1. Najpierw PL.
+        for (const q of queries) {
             try {
-                const data = await fetchJsonWithTimeout(url);
-                if (data && Array.isArray(data.results)) return data.results;
+                const results = await itunesJsonp(q, 'PL');
+                if (results.length) return results;
             } catch (e) {
                 lastError = e;
             }
         }
 
-        // Fallback tylko wtedy, gdy bezpośredni dostęp jest blokowany.
-        // To zabezpiecza starsze przeglądarki / nietypowe sieci mobilne.
-        for (const url of urls) {
+        // 2. Jeżeli polski storefront nic nie zwrócił, próbujemy domyślnego.
+        // Nie używamy corsproxy.io — to był kolejny słaby punkt na telefonach.
+        for (const q of queries) {
             try {
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-                const data = await fetchJsonWithTimeout(proxyUrl, 10000);
-                if (data && Array.isArray(data.results)) return data.results;
+                const results = await itunesJsonp(q, null);
+                if (results.length) return results;
             } catch (e) {
                 lastError = e;
             }
         }
 
-        throw lastError || new Error('Brak odpowiedzi iTunes');
+        throw lastError || new Error('ITUNES_EMPTY_RESULTS');
     }
 
     async function resolveItunesPreview(song) {
