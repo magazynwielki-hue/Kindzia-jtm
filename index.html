@@ -40,11 +40,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             height: 100dvh;
             min-height: 100vh;
             min-height: 100dvh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             margin: 0;
             padding: env(safe-area-inset-top, 15px) env(safe-area-inset-right, 15px) env(safe-area-inset-bottom, 15px) env(safe-area-inset-left, 15px);
             overflow: hidden;
@@ -58,10 +63,11 @@
             position: fixed; 
             top: 0; 
             left: 0; 
+            right: 0;
+            bottom: 0;
             width: 100vw; 
+            height: 100vh; 
             height: 100dvh; 
-            width: 100%;
-            height: 100%;
             pointer-events: none; 
             z-index: 1; 
         }
@@ -97,6 +103,7 @@
             backdrop-filter: blur(12px);
             position: relative;
             z-index: 10;
+            margin: auto;
             transition: filter 0.8s ease-in-out, opacity 0.8s ease-in-out, transform 0.6s ease-in-out;
         }
         .blur-effect { filter: blur(15px); opacity: 0.2; }
@@ -544,7 +551,7 @@
     let clickAudioContext = null;
     let uiAudioCtx = null;
 
-    // Blokada zoomu i gestów na iOS
+    // Blokada zoomu i przesuwania na iOS
     document.addEventListener('gesturestart', function (e) {
         e.preventDefault();
     });
@@ -637,8 +644,10 @@
     window.addEventListener('orientationchange', resizeCanvas);
 
     function resizeCanvas() {
-        canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-        canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        const w = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0, screen.width || 0);
+        const h = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0, screen.height || 0);
+        canvas.width = w;
+        canvas.height = h;
     }
 
     let particles = [];
@@ -667,7 +676,7 @@
         const notesSymbols = ['♪', '♫', '♬', '♩'];
         musicNotes.push({
             x: Math.random() * canvas.width,
-            y: canvas.height + 60, // Płynny start poniżej dolnej krawędzi ekranu telefonu
+            y: canvas.height + 40,
             vy: Math.random() * 2.5 + 1.8,
             vx: (Math.random() - 0.5) * 2,
             alpha: 1,
@@ -1023,7 +1032,7 @@
         { category: "Haddaway", query: "What Is Love", title: "What Is Love - Haddaway" },
         { category: "Ace of Base", query: "All That She Wants", title: "All That She Wants - Ace of Base" },
         { category: "Pectus", query: "Barcelona", title: "Barcelona - Pectus" },
-        { category: "Pectus", query: "To Co Chciałbym Ci Dać", title: "To Co Chciałbym Ci Dać - Pectus" },
+        { category: "Pectus", query: "To Co Chciałbym Ci Dać", title: "To标志 Chciałbym Ci Dać - Pectus" },
         { category: "Enej", query: "Kamien Z Napisem Love", title: "Kamien Z Napisem Love - Enej" },
         { category: "Enej", query: "Skrzydlate Ręce", title: "Skrzydlate Ręce - Enej" },
         { category: "Enej", query: "Radio Hello", title: "Radio Hello - Enej" },
@@ -1117,7 +1126,7 @@
         { category: "Varius Manx", query: "Zanim Zrozumiesz", title: "Zanim Zrozumiesz - Kasia Stankiewicz & Varius Manx" },
         { category: "Varius Manx", query: "Orła Cień", title: "Orła Cień - Kasia Stankiewicz & Varius Manx" },
         { category: "Maryla Rodowicz", query: "Dziś Prawdziwych Cyganów Już Nie Ma", title: "Dziś Prawdziwych Cyganów Już Nie Ma - Maryla Rodowicz" },
-        { category: "Bajm", query: "Józek, Nie Daruje Ci Tej Nocy", title: "Józek, Nie Daruje Ci Tej Nocy - Bajm" },
+        { category: "Bajm", query: "Józek, Nie Daruje Ci标志 Nocy", title: "Józek, Nie Daruje Ci Tej Nocy - Bajm" },
         { category: "Wilki", query: "Baśka", title: "Baśka - Wilki" },
         { category: "Kayah", query: "Prawy do lewego", title: "Prawy do lewego - Goran Bregović & Kayah" },
         { category: "Kayah", query: "Śpij kochanie, śpij", title: "Śpij kochanie, śpij - Goran Bregović & Kayah" },
@@ -1219,9 +1228,9 @@
         { category: "Budka Suflera", query: "Ratujmy Co Się Da", title: "Ratujmy Co Się Da - Budka Suflera" },
         { category: "Bajm", query: "Biala Armia", title: "Biala Armia - Bajm" },
         { category: "Bajm", query: "Co Mi Panie Dasz", title: "Co Mi Panie Dasz - Bajm" },
-        { category: "Bajm", query: "Piechotą Do Lata", title: "Piechotą Do Lata - Bajm" },
+        { category: "Piechotą Do Lata", query: "Piechotą Do Lata", title: "Piechotą Do Lata - Bajm" },
         { category: "Bajm", query: "Szklanka Wody", title: "Szklanka Wody - Bajm" },
-        { category: "Bajm", query: "Nie扩大 Wody Na Pustyni", title: "Nie Ma Wody Na Pustyni - Bajm" },
+        { category: "Bajm", query: "Nie Ma Wody Na Pustyni", title: "Nie Ma Wody Na Pustyni - Bajm" },
         { category: "Dżem", query: "Wehikul Czasu To Bylby Cud", title: "Wehikul Czasu To Bylby Cud - Dżem" },
         { category: "Dżem", query: "Whisky", title: "Whisky - Dżem" },
         { category: "Dżem", query: "Czerwony Jak Cegla", title: "Czerwony Jak Cegla - Dżem" },
@@ -1523,7 +1532,7 @@
         { category: "Deep Purple", query: "Smoke on the Water", title: "Smoke on the Water - Deep Purple" },
         { category: "Led Zeppelin", query: "Stairway to Heaven", title: "Stairway to Heaven - Led Zeppelin" },
         { category: "The Eagles", query: "Hotel California", title: "Hotel California - Eagles" },
-        { category: "Dire Straits", query: "Sultans of Swing", title: "Sultans of Swing -标志 Straits" },
+        { category: "Dire Straits", query: "Sultans of Swing", title: "Sultans of Swing - Dire Straits" },
         { category: "Pink Floyd", query: "Another Brick In the Wall, Pt. 2", title: "Another Brick In the Wall, Pt. 2 - Pink Floyd" },
         { category: "Partita", query: "Pytasz mnie, co Ci dam", title: "Pytasz mnie, co Ci dam - Partita" },
         { category: "Destiny's Child", query: "Say My Name", title: "Say My Name - Destiny's Child" },
@@ -1565,7 +1574,7 @@
         { category: "Maanam", query: "Parada Sloni I Roza", title: "Parada Sloni I Roza - Maanam" },
         { category: "The Art Company", query: "Susanna", title: "Susanna - The Art Company" },
         { category: "Raffaella Carrà", query: "A far l'amore comincia tu", title: "A far l'amore comincia tu - Raffaella Carrà" },
-        { category: "Los Lobos", query: "La Bamba", title: "La Bamba - Los Lobos" },
+        { category: "Los标志 Lobos", query: "La Bamba", title: "La Bamba - Los Lobos" },
         { category: "Krzysztof Zalewski", query: "Miłość Miłość", title: "Miłość Miłość - Krzysztof Zalewski" },
         { category: "IGO", query: "Helena", title: "Helena - IGO" },
         { category: "Smolasty", query: "Duże oczy", title: "Duże oczy - Smolasty, Pedro & francis" },
@@ -1579,7 +1588,7 @@
         { category: "Paul Anka", query: "Diana", title: "Diana - Paul Anka" },
         { category: "Dean Martin", query: "That's Amore", title: "That's Amore - Dean Martin" },
         { category: "Paktofonika", query: "Chwile Ulotne", title: "Chwile Ulotne - Paktofonika" },
-        { category: "Kaliber 44", query: "Normalnie O Tej Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
+        { category: "Kaliber 44", query: "Normalnie O标志 Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
         { category: "Liroy", query: "Moja Autobiografia", title: "Moja Autobiografia - Liroy" },
         { category: "WWO", query: "Każdy ponad każdym", title: "Każdy ponad każdym - White House, Sokół & WWO" },
         { category: "Michael Jackson", query: "Man in the Mirror", title: "Man in the Mirror - Michael Jackson" },
@@ -1712,7 +1721,7 @@
         { category: "Bryan Adams", query: "Please Forgive Me", title: "Please Forgive Me - Bryan Adams" },
         { category: "Bon Jovi", query: "Always", title: "Always - Bon Jovi" },
         { category: "Madonna", query: "Frozen", title: "Frozen - Madonna" },
-        { category: "Tears for Fears", query: "Everybody Wants to Rule the World", title: "Everybody Wants to Rule the World - Tears for Fears" },
+        { category: "Tears for Fears", query: "Everybody Wants to Rule the World", title: "Everybody Wants to标志 the World - Tears for Fears" },
         { category: "Simple Minds", query: "Don't You", title: "Don't You - Simple Minds" },
         { category: "Cyndi Lauper", query: "Time After Time", title: "Time After Time - Cyndi Lauper" },
         { category: "The Police", query: "Walking On The Moon", title: "Walking On The Moon - The Police" },
@@ -1749,7 +1758,7 @@
         { category: "Culture Club", query: "Karma Chameleon", title: "Karma Chameleon - Culture Club" },
         { category: "The Cars", query: "Drive", title: "Drive - The Cars" },
         { category: "Supertramp", query: "The Logical Song", title: "The Logical Song - Supertramp" },
-        { category: "The Moody Blues", query: "Nights In White Satin", title: "Nights In White Satin - The Moody Blues" },
+        { category: "The标志 Moody Blues", query: "Nights In White Satin", title: "Nights In White Satin - The Moody Blues" },
         { category: "Nazareth", query: "Love Hurts", title: "Love Hurts - Nazareth" },
         { category: "Natalia Przybysz", query: "Miod", title: "Miod - Natalia Przybysz" },
         { category: "sanah", query: "hip hip hura!", title: "hip hip hura! - sanah" },
