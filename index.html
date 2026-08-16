@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <!-- TAGI PEŁNEGO EKRANU, TYTUŁU PWA I PRZEZROCZYSTEGO PASKA DLA IOS / ANDROID -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Kindziu JTM?">
@@ -37,8 +38,6 @@
             -webkit-touch-callout: none;
         }
         #fxCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        
-        /* PRZYCISK DOMEK - FIXED, ZAWSZE NA WIERZCHU */
         .home-btn {
             position: fixed;
             top: max(15px, env(safe-area-inset-top));
@@ -59,7 +58,6 @@
             -webkit-tap-highlight-color: transparent;
         }
         .home-btn:active { transform: scale(0.88); background: rgba(220, 38, 38, 0.85); border-color: #ff4d4d; }
-
         .card {
             background: rgba(15, 23, 42, 0.88);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -148,16 +146,12 @@
             0% { transform: translateY(0) rotate(-6deg) scale(1); }
             100% { transform: translateY(-12px) rotate(6deg) scale(1.04); }
         }
-
-        /* TELEFON - MARGINES GÓRNY NA KARTĘ, ŻEBY NIE WCHODZIŁA POD DOMEK */
         @media (max-width: 480px) {
-            .card { margin-top: 60px; }
             .robert-speech-container { transform: translateX(-18%); }
             .dancing-robert { width: 140px; height: 180px; }
             .speech-bubble-wrapper { width: 240px; left: 75px; top: -30px; }
             .speech-text { font-size: 13.5px; line-height: 1.2; left: 18px; right: 18px; top: 10px; height: 80px; }
         }
-
         .menu-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
         .menu-btn {
             background: linear-gradient(135deg, rgba(0, 119, 182, 0.6), rgba(0, 180, 216, 0.4));
@@ -343,14 +337,14 @@
 
 <canvas id="fxCanvas"></canvas>
 
-<div class="card" id="mainCard">
-    <button id="homeBtn" class="home-btn" onclick="goToMenu()" title="Powrót do menu" style="display: none;">
-        <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-    </button>
+<button id="homeBtn" class="home-btn" onclick="goToMenu()" title="Powrót do menu" style="display: none;">
+    <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+</button>
 
+<div class="card" id="mainCard">
     <h1>Jaka to Melodia?</h1>
 
     <div id="startScreen">
@@ -774,7 +768,7 @@
         { category: "Natalia Przybysz", query: "Nazywam Sie Niebo", title: "Nazywam Sie Niebo - Natalia Przybysz" },
         { category: "Procol Harum", query: "A Whiter Shade of Pale", title: "A Whiter Shade of Pale - Procol Harum" },
         { category: "Wham!", query: "Wake Me Up Before You Go-Go", title: "Wake Me Up Before You Go-Go - Wham!" },
-        { category: "Lao Che", query: "Stare Miasto", title: "Stare Miasto - Lao Che" },
+        { category: "Lao Che", query: "Stare标志 Miasto", title: "Stare Miasto - Lao Che" },
         { category: "Magda Umer", query: "Koncert jesienny na dwa świerszcze i wiatr w kominie", title: "Koncert jesienny na dwa świerszcze i wiatr w kominie - Magda Umer" },
         { category: "Earth, Wind & Fire", query: "Let's Groove", title: "Let's Groove - Earth, Wind & Fire" },
         { category: "Gotye", query: "Somebody That I Used to Know", title: "Somebody That I Used to Know - Gotye" },
@@ -791,7 +785,7 @@
         { category: "Chappell Roan", query: "Good Luck, Babe!", title: "Good Luck, Babe! - Chappell Roan" },
         { category: "Jan Pietrzak", query: "Żeby Polska", title: "Żeby Polska - Jan Pietrzak" },
         { category: "Avicii", query: "Levels", title: "Levels - Avicii" },
-        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To Co Mam - Kasia Kowalska" },
+        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To标志 Co Mam - Kasia Kowalska" },
         { category: "Stare Dobre Małżeństwo", query: "Czarny Blues O Czwartej Nad Ranem", title: "Czarny Blues O Czwartej Nad Ranem - Stare Dobre Małżeństwo" },
         { category: "Gigi D'Agostino", query: "L'amour toujours", title: "L'amour toujours - Gigi D'Agostino" },
         { category: "Metallica", query: "Nothing Else Matters", title: "Nothing Else Matters - Metallica" },
@@ -907,7 +901,7 @@
         { category: "Bon Jovi", query: "It's My Life", title: "It's My Life - Bon Jovi" },
         { category: "Bon Jovi", query: "Livin' On A Prayer", title: "Livin' On A Prayer - Bon Jovi" },
         { category: "Wojciech Gąssowski", query: "Gdzie Się Podziały Tamte Prywatki", title: "Gdzie Się Podziały Tamte Prywatki - Wojciech Gassowski" },
-        { category: "Maria Koterbska", query: "Karuzela", title: "Karuzela - Maria Koterbska" },
+        { category: "Maria Koterbska", query: "Karuzela", title: "Karuzela - Maria标志 Koterbska" },
         { category: "Maria Koterbska", query: "Serduszko Puka W Rytmie Cha-Cha", title: "Serduszko Puka W Rytmie Cha-Cha - Maria Koterbska" },
         { category: "Piotr Szczepanik", query: "Kochać", title: "Kochać - Piotr Szczepanik" },
         { category: "Piotr Szczepanik", query: "Goniąc kormorany", title: "Goniąc kormorany - Piotr Szczepanik, Alibabki & Ricercar 64" },
@@ -966,9 +960,9 @@
         { category: "Łzy", query: "Agnieszka Już Dawno …", title: "Agnieszka Już Dawno … - Lzy" },
         { category: "Feel", query: "Jak Anioła Głos", title: "Jak Anioła Głos - Feel" },
         { category: "Feel", query: "No pokaz Na Co Cie Stac", title: "No pokaz Na Co Cie Stac - Feel" },
-        { category: "Feel", query: "A Gdy Jest Juz Ciemno", title: "A Gdy Jest Juz Ciemno - Feel" },
+        { category: "Feel", query: "A Gdy Jest Juz Ciemno", title: "A Gdy Jest标志 Juz Ciemno - Feel" },
         { category: "Kwiat Jabłoni", query: "Od nowa", title: "Od nowa - Kwiat Jabłoni" },
-        { category: "Kwiat Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś Późno Pójdę Spać - Kwiat Jabłoni" },
+        { category: "Kwiat Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś标志 Późno Pójdę Spać - Kwiat Jabłoni" },
         { category: "Daria Zawiałow", query: "Kaonashi", title: "Kaonashi - Daria Zawiałow" },
         { category: "Mrozu", query: "Aura", title: "Aura - Mrozu" },
         { category: "Mrozu", query: "Jak Nie My To Kto", title: "Jak Nie My To Kto - Mrozu" },
@@ -1118,7 +1112,7 @@
         { category: "Lady Pank", query: "Wciąż bardziej obcy", title: "Wciąż bardziej obcy - Lady Pank" },
         { category: "Perfect", query: "Autobiografia", title: "Autobiografia - Perfect" },
         { category: "Perfect", query: "Nie Płacz Ewka", title: "Nie Płacz Ewka - Perfect" },
-        { category: "Ale Wkoło Jest Wesoło", query: "Ale Wkoło Jest Wesoło", title: "Ale Wkoło Jest Wesoło - Perfect" },
+        { category: "Perfect", query: "Ale Wkoło Jest Wesoło", title: "Ale Wkoło Jest Wesoło - Perfect" },
         { category: "Perfect", query: "Chcemy Być Sobą", title: "Chcemy Być Sobą - Perfect" },
         { category: "Perfect", query: "Niewiele Ci Mogę Dać", title: "Niewiele Ci Mogę Dać - Perfect" },
         { category: "Perfect", query: "Pepe Wróć", title: "Pepe Wróć - Perfect" },
@@ -1126,7 +1120,7 @@
         { category: "Budka Suflera", query: "Bal Wszystkich Świętych", title: "Bal Wszystkich Świętych - Budka Suflera" },
         { category: "Budka Suflera", query: "Cień Wielkiej Góry", title: "Cień Wielkiej Góry - Budka Suflera" },
         { category: "Budka Suflera", query: "Za ostatni grosz", title: "Za ostatni grosz - Budka Suflera" },
-        { category: "Budka Suflera", query: "Ratujmy Co Się Da", title: "Ratujmy Co Się Da - Budka Suflera" },
+        { category: "Budka Suflera", query: "Ratujmy Co Się Da", title: "Ratujmy Co标志 Się Da - Budka Suflera" },
         { category: "Bajm", query: "Biala Armia", title: "Biala Armia - Bajm" },
         { category: "Bajm", query: "Co Mi Panie Dasz", title: "Co Mi Panie Dasz - Bajm" },
         { category: "Bajm", query: "Piechotą Do Lata", title: "Piechotą Do Lata - Bajm" },
@@ -1347,7 +1341,7 @@
         { category: "Zdzisława Sośnicka", query: "Będzie, Co Ma Być", title: "Będzie, Co Ma Być - Zdzisława Sośnicka" },
         { category: "Urszula Sipińska", query: "Są takie dni w tygodniu", title: "Są takie dni w tygodniu - Urszula Sipinska" },
         { category: "Urszula Sipińska", query: "To Był Świat W Zupełnie Starym Stylu", title: "To Był Świat W Zupełnie Starym Stylu - Urszula Sipinska" },
-        { category: "Marek Grechuta", query: "Bedziesz Moją Panią", title: "Bedziesz Moją Panią - Marek Grechuta & Anawa" },
+        { category: "Marek Grechuta", query: "Bedziesz Moją标志 Panią", title: "Bedziesz Moją Panią - Marek Grechuta & Anawa" },
         { category: "Marek Grechuta", query: "Nie Dokazuj", title: "Nie Dokazuj - Marek Grechuta & Anawa" },
         { category: "Marek Grechuta", query: "Świecie Nasz", title: "Świecie Nasz - Marek Grechuta" },
         { category: "Grzegorz Turnau", query: "Cichosza", title: "Cichosza - Grzegorz Turnau" },
@@ -1381,7 +1375,7 @@
         { category: "Budka Suflera", query: "Sen O Dolinie", title: "Sen O Dolinie - Budka Suflera" },
         { category: "Budka Suflera", query: "Nie Wierz Nigdy Kobiecie", title: "Nie Wierz Nigdy Kobiecie - Budka Suflera" },
         { category: "2 Plus 1", query: "Chodź, pomaluj mój świat", title: "Chodź, pomaluj mój świat - 2 Plus 1" },
-        { category: "2 Plus 1", query: "Lekkoduch", title: "Lekkoduch - Pięć Dwa, Hans Solo & Deep" },
+        { category: "2 Plus 1", query: "Lekkoduch", title: "Lekkoduch -标志 Pięć Dwa, Hans Solo & Deep" },
         { category: "2 Plus 1", query: "Słońca", title: "Słońca - Dwa plus Jeden" },
         { category: "2 Plus 1", query: "Requiem dla samej siebie", title: "Requiem dla samej siebie - 2 Plus 1" },
         { category: "Kasia Sobczyk", query: "O mnie się nie martw", title: "O mnie się nie martw - Katarzyna Sobczyk" },
@@ -1463,7 +1457,7 @@
         { category: "Mr. President", query: "Coco Jamboo", title: "Coco Jamboo - Mr. President" },
         { category: "Loona", query: "Bailando", title: "Bailando - Loona" },
         { category: "Corona", query: "The Rhythm Of The Night", title: "The Rhythm Of The Night - Corona" },
-        { category: "Michel Teló", query: "Ai Se Eu Te Pego", title: "Ai Se Eu Te Pego - Michel Teló" },
+        { category: "Michel Teló", query: "Ai Se Eu Te Pego", title: "Ai标志 Se Eu Te Pego - Michel Teló" },
         { category: "Juanes", query: "La Camisa Negra", title: "La Camisa Negra - Juanes" },
         { category: "Gusttavo Lima", query: "Balada", title: "Balada - Gusttavo Lima" },
         { category: "Sistars", query: "Sutra", title: "Sutra - Sistars" },
@@ -1563,7 +1557,7 @@
         { category: "After Party", query: "Tylko Ona Jedyna", title: "Tylko Ona Jedyna - After Party" },
         { category: "Piękni i Młodzi", query: "Niewiara", title: "Niewiara - Piękni I Młodzi" },
         { category: "Playboys", query: "Lejde", title: "Lejde - Playboys" },
-        { category: "Riccardo Fogli", query: "Storie Di Tutti I Giorni", title: "Storie Di Tutti I Giorni - Riccardo Fogli" },
+        { category: "Riccardo Fogli", query: "Storie Di Tutti I标志 Giorni", title: "Storie Di Tutti I Giorni - Riccardo Fogli" },
         { category: "Gigliola Cinquetti", query: "Non Ho L' Eta'", title: "Non Ho L' Eta' - Gigliola Cinquetti" },
         { category: "Desireless", query: "Voyage voyage Desireless", title: "Voyage voyage - Desireless" },
         { category: "ZAZ", query: "Je veux", title: "Je veux - ZAZ" },
@@ -1715,7 +1709,7 @@
         { category: "Ed Sheeran", query: "Thinking Out Loud", title: "Thinking Out Loud - Ed Sheeran" },
         { category: "Wilki", query: "Eli Lama Sabachtani", title: "Eli Lama Sabachtani - Wilki" },
         { category: "Wojciech Gąssowski", query: "Jeszcze W Zielone Gramy", title: "Jeszcze W Zielone Gramy - Wojciech Młynarski" },
-        { category: "Journey", query: "Don't Stop Believin'", title: "Don't Stop Believin' - Journey" },
+        { category: "Journey", query: "Don't Stop Believin'", title: "Don't标志 Stop Believin' - Journey" },
         { category: "Guns N' Roses", query: "Sweet Child O' Mine", title: "Sweet Child O' Mine - Guns N' Roses" },
         { category: "AC/DC", query: "Thunderstruck", title: "Thunderstruck - AC/DC" },
         { category: "AC/DC", query: "Highway to Hell", title: "Highway to Hell - AC/DC" },
@@ -1732,6 +1726,9 @@
         { category: "Szanty", query: "Przechyły", title: "Przechyły - Szanty" }
     ];
 
+    // =========================================================================
+    // 3. GŁÓWNA POŁĄCZONA BAZA DLA GRY
+    // =========================================================================
     const masterSongPool = [...whiteListSongPool, ...itunesSongPool];
 
     let currentRound = 1;
@@ -1746,6 +1743,8 @@
     let currentPreviewUrl = null;
     let fullPreviewTimer = null;
     let isFullPlaying = false;
+
+    // Historia ostatnich 5 losowań dla Rundy 1 i 2
     let recentCategorySetsHistory = [];
 
     const audio = document.getElementById('audioPlayer');
@@ -1762,18 +1761,28 @@
             let saved = localStorage.getItem('kindziu_review_songs_v2');
             if (!saved) return [];
             return JSON.parse(saved);
-        } catch (e) { return []; }
+        } catch (e) {
+            return [];
+        }
     }
 
     function addReviewSong(song) {
         try {
             let list = getReviewSongs();
             if (!list.some(s => s.query === song.query)) {
-                list.push({ category: song.category, query: song.query, title: song.title, audioSource: song.audioSource || null, startSec: song.startSec || 0 });
+                list.push({
+                    category: song.category,
+                    query: song.query,
+                    title: song.title,
+                    audioSource: song.audioSource || null,
+                    startSec: song.startSec || 0
+                });
                 localStorage.setItem('kindziu_review_songs_v2', JSON.stringify(list));
             }
             updateReviewMenuButton();
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error("Błąd zapisu do powtórek:", e);
+        }
     }
 
     function removeReviewSong(query) {
@@ -1782,17 +1791,34 @@
             let filtered = list.filter(s => s.query !== query);
             localStorage.setItem('kindziu_review_songs_v2', JSON.stringify(filtered));
             updateReviewMenuButton();
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error("Błąd usuwania z powtórek:", e);
+        }
     }
 
     function updateReviewMenuButton() {
         const reviewBtn = document.getElementById('reviewMenuBtn');
         const reviewSub = document.getElementById('reviewMenuSub');
         if (!reviewBtn || !reviewSub) return;
-        let count = getReviewSongs().length;
+
+        let reviewList = getReviewSongs();
+        let count = reviewList.length;
+
         reviewSub.innerText = `${count}/${masterSongPool.length} haseł (wymagane min. 10 haseł)`;
-        if (count >= 10) { reviewBtn.disabled = false; reviewBtn.style.opacity = "1"; reviewBtn.style.background = "linear-gradient(135deg, #2ecc71, #27ae60)"; reviewBtn.style.borderColor = "#2ecc71"; reviewSub.style.color = "#d4edda"; }
-        else { reviewBtn.disabled = true; reviewBtn.style.opacity = "0.5"; reviewBtn.style.background = "rgba(255, 255, 255, 0.08)"; reviewBtn.style.borderColor = "rgba(255, 255, 255, 0.15)"; reviewSub.style.color = "#8ecae6"; }
+
+        if (count >= 10) {
+            reviewBtn.disabled = false;
+            reviewBtn.style.opacity = "1";
+            reviewBtn.style.background = "linear-gradient(135deg, #2ecc71, #27ae60)";
+            reviewBtn.style.borderColor = "#2ecc71";
+            reviewSub.style.color = "#d4edda";
+        } else {
+            reviewBtn.disabled = true;
+            reviewBtn.style.opacity = "0.5";
+            reviewBtn.style.background = "rgba(255, 255, 255, 0.08)";
+            reviewBtn.style.borderColor = "rgba(255, 255, 255, 0.15)";
+            reviewSub.style.color = "#8ecae6";
+        }
     }
 
     function playFeedbackSound(isWin) {
@@ -1805,21 +1831,30 @@
             notes.forEach((f, i) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                osc.type = 'sine'; osc.frequency.setValueAtTime(f, now + i * 0.08);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(f, now + i * 0.08);
                 gain.gain.setValueAtTime(0.0001, now + i * 0.08);
                 gain.gain.exponentialRampToValueAtTime(0.15, now + i * 0.08 + 0.02);
                 gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 0.3);
                 osc.connect(gain); gain.connect(ctx.destination);
                 osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.35);
             });
-        } catch (e) {}
+        } catch (e) {
+            console.log("Audio niedostępne", e);
+        }
     }
 
     function resetFullPreviewState() {
-        if (fullPreviewTimer) { clearTimeout(fullPreviewTimer); fullPreviewTimer = null; }
+        if (fullPreviewTimer) {
+            clearTimeout(fullPreviewTimer);
+            fullPreviewTimer = null;
+        }
         isFullPlaying = false;
         const btn = document.getElementById('listenFullBtn');
-        if (btn) { btn.innerText = "🎧 Posłuchaj całości"; btn.style.background = "linear-gradient(180deg, #3a86ff 0%, #2563eb 100%)"; }
+        if (btn) {
+            btn.innerText = "🎧 Posłuchaj całości";
+            btn.style.background = "linear-gradient(180deg, #3a86ff 0%, #2563eb 100%)";
+        }
     }
 
     function goToMenu() {
@@ -1827,166 +1862,744 @@
         if (audio) { audio.pause(); audio.currentTime = 0; }
         clearInterval(timerInterval);
         resetFullPreviewState();
+
+        const stopReactionAudio = document.getElementById('stopReactionAudio');
+        if (stopReactionAudio) {
+            stopReactionAudio.pause();
+            stopReactionAudio.currentTime = 0;
+        }
+
         stopIntroMusic();
         stopStudioShowEffects();
+
         document.getElementById('startScreen').style.display = 'none';
         document.getElementById('introScreen').style.display = 'none';
         document.getElementById('mainMenuScreen').style.display = 'block';
         document.getElementById('categoryScreen').style.display = 'none';
         document.getElementById('gameScreen').style.display = 'none';
         document.getElementById('summaryScreen').style.display = 'none';
+        
         const card = document.getElementById('mainCard');
         card.classList.remove('blur-effect');
         card.classList.remove('punch-effect');
+        
         homeBtn.style.display = 'none';
         updateReviewMenuButton();
     }
 
-    function showMainMenu() { goToMenu(); document.getElementById('mainMenuScreen').style.display = 'block'; homeBtn.style.display = 'flex'; }
+    function showMainMenu() {
+        goToMenu();
+        document.getElementById('mainMenuScreen').style.display = 'block';
+        homeBtn.style.display = 'flex';
+    }
 
     function selectRound(round) {
         stopIntroMusic();
         stopStudioShowEffects();
+        
         isReviewMode = false;
         currentRound = round;
         totalSessionMoney = 0;
+        
         document.getElementById('mainMenuScreen').style.display = 'none';
         document.getElementById('categoryScreen').style.display = 'block';
         document.getElementById('reloadBtn').style.display = 'flex';
         homeBtn.style.display = 'flex';
-        document.getElementById('roundInfo').innerText = round === 1 ? "RUNDA 1: Wybierz kategorię (rosnąco 100 zł ➔ 200 zł):" : "RUNDA 2: Wybierz kategorię (malejąco 200 zł ➔ 100 zł):";
+
+        document.getElementById('roundInfo').innerText = round === 1 
+            ? "RUNDA 1: Wybierz kategorię (rosnąco 100 zł ➔ 200 zł):" 
+            : "RUNDA 2: Wybierz kategorię (malejąco 200 zł ➔ 100 zł):";
+
         drawNewSet();
     }
 
     function startReviewMode() {
         stopIntroMusic();
         stopStudioShowEffects();
+        
         isReviewMode = true;
         totalSessionMoney = 0;
+
         let reviewList = getReviewSongs();
         if (reviewList.length < 10) return;
+
         document.getElementById('mainMenuScreen').style.display = 'none';
         document.getElementById('categoryScreen').style.display = 'block';
         document.getElementById('reloadBtn').style.display = 'none';
         homeBtn.style.display = 'flex';
+
         document.getElementById('roundInfo').innerText = "DO POWTÓRKI: Trening trudnych utworów (100 zł ➔ 200 zł):";
+
         playShuffleSound();
+
         playedIds = [];
         const shuffled = [...reviewList].sort(() => 0.5 - Math.random());
         const count = Math.min(5, shuffled.length);
         const selected = shuffled.slice(0, count);
-        activeCategoriesSet = selected.map((item, index) => ({ id: index + 1, category: item.category, query: item.query, title: item.title, audioSource: item.audioSource || null, startSec: item.startSec || 0 }));
+
+        activeCategoriesSet = selected.map((item, index) => ({
+            id: index + 1,
+            category: item.category,
+            query: item.query,
+            title: item.title,
+            audioSource: item.audioSource || null,
+            startSec: item.startSec || 0
+        }));
+
         renderCategories();
     }
 
     function drawNewSet() {
-        if (isReviewMode) { startReviewMode(); return; }
+        if (isReviewMode) {
+            startReviewMode();
+            return;
+        }
+
         playShuffleSound();
         const icon = document.getElementById('reloadIcon');
-        if (icon) { icon.classList.remove('spin-anim'); void icon.offsetWidth; icon.classList.add('spin-anim'); }
+        if (icon) {
+            icon.classList.remove('spin-anim');
+            void icon.offsetWidth;
+            icon.classList.add('spin-anim');
+        }
+
         playedIds = [];
         const requiredCount = currentRound === 1 ? 5 : 3;
+        
+        // Wyciągamy wszystkie unikalne kategorie
         const categoriesList = [...new Set(masterSongPool.map(item => item.category))];
+
+        // Wyciągamy zablokowane kategorie z ostatnich 5 losowań
         const blockedCategories = recentCategorySetsHistory.flat();
+
+        // Filtrujemy kategorie, pomijając te z ostatnich 5 losowań
         let availableCategories = categoriesList.filter(cat => !blockedCategories.includes(cat));
-        if (availableCategories.length < requiredCount) { recentCategorySetsHistory = []; availableCategories = categoriesList; }
+
+        // Zabezpieczenie: jeśli pula dostępnych kategorii jest mniejsza niż wymagana ilość, resetujemy historię
+        if (availableCategories.length < requiredCount) {
+            recentCategorySetsHistory = [];
+            availableCategories = categoriesList;
+        }
+
         const shuffledCategories = availableCategories.sort(() => 0.5 - Math.random());
         const selectedCategories = shuffledCategories.slice(0, requiredCount);
+
+        // Zapisujemy wylosowane kategorie do historii ostatnich 5 losowań
         recentCategorySetsHistory.push(selectedCategories);
-        if (recentCategorySetsHistory.length > 5) recentCategorySetsHistory.shift();
+        if (recentCategorySetsHistory.length > 5) {
+            recentCategorySetsHistory.shift();
+        }
+
         activeCategoriesSet = selectedCategories.map((catName, index) => {
             const availableSongs = masterSongPool.filter(s => s.category === catName);
             const randomSong = availableSongs[Math.floor(Math.random() * availableSongs.length)];
-            return { id: index + 1, category: catName, query: randomSong.query, title: randomSong.title, audioSource: randomSong.audioSource || null, startSec: randomSong.startSec || 0 };
+            return {
+                id: index + 1,
+                category: catName,
+                query: randomSong.query,
+                title: randomSong.title,
+                audioSource: randomSong.audioSource || null,
+                startSec: randomSong.startSec || 0
+            };
         });
+
         renderCategories();
     }
 
     function renderCategories() {
         const list = document.getElementById('categoriesList');
         list.innerHTML = '';
+
         activeCategoriesSet.forEach((item, index) => {
             const btn = document.createElement('button');
             let isPlayed = playedIds.includes(item.id);
-            if (playedIds.length === 0) { btn.className = 'cat-btn animate-in'; btn.style.animationDelay = `${index * 0.12}s`; playPopSound(index * 0.12 + 0.05); }
-            else { btn.className = 'cat-btn' + (isPlayed ? ' played' : ''); btn.style.opacity = '1'; }
+            let delay = 0;
+            
+            if (playedIds.length === 0) {
+                btn.className = 'cat-btn animate-in';
+                delay = index * 0.12;
+                btn.style.animationDelay = `${delay}s`;
+                playPopSound(delay + 0.05);
+            } else {
+                btn.className = 'cat-btn' + (isPlayed ? ' played' : '');
+                btn.style.opacity = '1';
+                btn.style.transform = 'translateY(0)';
+            }
+
             btn.innerHTML = `<span>${item.category}</span> <span>${isPlayed ? '✓' : '➔'}</span>`;
-            if (!isPlayed) btn.onclick = () => startSong(item);
+            if (!isPlayed) {
+                btn.onclick = () => startSong(item);
+                // Usunięto prefetchSongPreview(item) - brak zapytań w tle chroni przed banem IP przy spamowaniu shuffle!
+            }
             list.appendChild(btn);
         });
     }
 
-    // Pozostałe funkcje audio...
+    // =========================================================================
+    // ODTWARZANIE AUDIO - WERSJA NAPRAWIONA DLA TELEFONÓW / SAFARI / CHROME
+    // =========================================================================
+
+    const ITUNES_CACHE_KEY = 'kindziu_itunes_preview_cache_v3';
+    const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14; // 14 dni
+    let audioUnlocked = false;
+    let audioRequestId = 0;
+
+    const MOBILE_SILENCE_WAV =
+        'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YQAAAAAA';
+
+    function readItunesCache() {
+        try {
+            const raw = localStorage.getItem(ITUNES_CACHE_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function writeItunesCache(cache) {
+        try {
+            localStorage.setItem(ITUNES_CACHE_KEY, JSON.stringify(cache));
+        } catch (e) {
+        }
+    }
+
+    function songCacheKey(song) {
+        return `${song.category}|||${song.query}`.toLowerCase().trim();
+    }
+
+    function getCachedPreview(song) {
+        const cache = readItunesCache();
+        const item = cache[songCacheKey(song)];
+        if (!item || !item.url) return null;
+        if (item.savedAt && Date.now() - item.savedAt > ITUNES_CACHE_TTL) return null;
+        return item.url;
+    }
+
+    function saveCachedPreview(song, url) {
+        if (!url) return;
+        const cache = readItunesCache();
+        cache[songCacheKey(song)] = { url, savedAt: Date.now() };
+        writeItunesCache(cache);
+    }
+
+    function normalizeText(value) {
+        return String(value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function tokenScore(a, b) {
+        const aa = normalizeText(a).split(' ').filter(Boolean);
+        const bb = new Set(normalizeText(b).split(' ').filter(Boolean));
+        if (!aa.length || !bb.size) return 0;
+        let hits = 0;
+        aa.forEach(t => { if (bb.has(t)) hits++; });
+        return hits / aa.length;
+    }
+
+    function scoreItunesResult(result, song) {
+        const artist = result.artistName || '';
+        const track = result.trackName || '';
+
+        const artistTarget = normalizeText(song.category);
+        const titleTarget = normalizeText(song.query);
+        const artistResult = normalizeText(artist);
+        const titleResult = normalizeText(track);
+
+        let score = 0;
+        if (artistResult === artistTarget) score += 100;
+        if (titleResult === titleTarget) score += 100;
+
+        score += tokenScore(song.category, artist) * 40;
+        score += tokenScore(song.query, track) * 60;
+
+        const full = `${artist} ${track}`.toLowerCase();
+        if (titleTarget && full.includes(titleTarget)) score += 35;
+        if (artistTarget && full.includes(artistTarget)) score += 25;
+
+        if (!result.previewUrl) score -= 1000;
+
+        return score;
+    }
+
+    async function fetchJsonWithTimeout(url, timeoutMs = 9000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                cache: 'no-store',
+                signal: controller.signal,
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
     function itunesJsonp(term, country = null, timeoutMs = 10000) {
         return new Promise((resolve, reject) => {
             const callbackName = 'itunes_cb_' + Math.random().toString(36).substring(2, 10);
-            let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=15&callback=${callbackName}&_t=${Date.now()}`;
+            let url =
+                `https://itunes.apple.com/search?term=${encodeURIComponent(term)}` +
+                `&entity=song&limit=15&callback=${callbackName}&_t=${Date.now()}`;
+
             if (country) url += `&country=${country}`;
-            const script = document.createElement('script'); script.src = url;
-            const timeout = setTimeout(() => { cleanup(); reject(new Error("TIMEOUT_ITUNES")); }, timeoutMs);
-            function cleanup() { if (window[callbackName]) delete window[callbackName]; if (script.parentNode) script.parentNode.removeChild(script); clearTimeout(timeout); }
-            window[callbackName] = function(data) { cleanup(); resolve(data); };
-            script.onerror = function() { cleanup(); reject(new Error("ITUNES_NETWORK_ERROR")); };
+
+            const script = document.createElement('script');
+            script.src = url;
+
+            const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error("TIMEOUT_ITUNES"));
+            }, timeoutMs);
+
+            function cleanup() {
+                if (window[callbackName]) delete window[callbackName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+                clearTimeout(timeout);
+            }
+
+            window[callbackName] = function(data) {
+                cleanup();
+                resolve(data);
+            };
+
+            script.onerror = function() {
+                cleanup();
+                reject(new Error("ITUNES_NETWORK_ERROR"));
+            };
+
             document.body.appendChild(script);
         });
+    }
+
+    function cleanAppleText(str) {
+        return String(str || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/ł/g, "l")
+            .replace(/Ł/g, "L")
+            .toLowerCase();
+    }
+
+    function appleCleanString(str) {
+        return cleanAppleText(str).replace(/[^a-z0-9]/g, "");
+    }
+
+    function appleSimilarity(a, b) {
+        const s1 = appleCleanString(a);
+        const s2 = appleCleanString(b);
+        if (!s1 || !s2) return 0;
+        if (s1.includes(s2) || s2.includes(s1)) return 0.9;
+
+        const words1 = cleanAppleText(a).split(/\s+/).filter(w => w.length > 2);
+        const words2 = cleanAppleText(b).split(/\s+/).filter(w => w.length > 2);
+
+        let matches = 0;
+        words1.forEach(w => {
+            if (words2.some(w2 => w2.includes(w) || w.includes(w2))) matches++;
+        });
+        return words1.length ? matches / words1.length : 0;
+    }
+
+    function appleArtistValid(appleArtist, expectedArtist) {
+        if (!appleArtist || !expectedArtist) return false;
+
+        const a = cleanAppleText(appleArtist);
+        const e = cleanAppleText(expectedArtist);
+        const words = e.split(/\s+/).filter(w => w.length > 2);
+
+        return words.some(w => a.includes(w));
+    }
+
+    async function fetchItunesResults(song) {
+        const query = `${song.category} ${song.query}`;
+
+        let data = await itunesJsonp(query, "PL", 10000);
+        if (data && Array.isArray(data.results) && data.results.length) return data.results;
+
+        await new Promise(r => setTimeout(r, 300));
+
+        data = await itunesJsonp(query, null, 10000);
+        return (data && Array.isArray(data.results)) ? data.results : [];
     }
 
     async function resolveItunesPreview(song) {
         const cached = getCachedPreview(song);
         if (cached) return cached;
-        let data = await itunesJsonp(`${song.category} ${song.query}`, "PL");
-        if (data && data.results && data.results.length > 0) {
-            let res = data.results.find(r => r.previewUrl) || data.results[0];
-            saveCachedPreview(song, res.previewUrl);
-            return res.previewUrl;
+
+        let results = [];
+
+        try {
+            results = await fetchItunesResults(song);
+        } catch (firstError) {
+            try {
+                results = await itunesJsonp(song.query, "PL", 15);
+            } catch (_) {
+                try {
+                    results = await itunesJsonp(song.query, null, 15);
+                } catch (finalError) {
+                    throw firstError;
+                }
+            }
         }
-        throw new Error("No match");
+
+        const withPreview = (results || []).filter(r => r && r.previewUrl);
+
+        if (!withPreview.length) {
+            throw new Error("ITUNES_NO_PREVIEW");
+        }
+
+        let best = withPreview.find(r =>
+            appleArtistValid(r.artistName, song.category) &&
+            appleSimilarity(r.trackName, song.query) >= 0.40
+        );
+
+        if (!best) {
+            best = withPreview
+                .map(r => ({
+                    r,
+                    score:
+                        appleSimilarity(r.trackName, song.query) * 70 +
+                        (appleArtistValid(r.artistName, song.category) ? 50 : 0)
+                }))
+                .sort((a, b) => b.score - a.score)[0]?.r;
+        }
+
+        if (!best || !best.previewUrl) {
+            throw new Error("ITUNES_NO_MATCH");
+        }
+
+        saveCachedPreview(song, best.previewUrl);
+        return best.previewUrl;
+    }
+
+    function setAudioStatusError(message) {
+        statusMsg.innerText = message;
+    }
+
+    function startRoundTimer() {
+        statusMsg.innerText = "Graj!";
+        stopBtn.disabled = false;
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            elapsedSeconds++;
+            finalAmount = (isReviewMode || currentRound === 1)
+                ? (100 + elapsedSeconds * 10)
+                : (200 - elapsedSeconds * 10);
+
+            moneyDisplay.innerText = finalAmount;
+
+            const progressPercent = (elapsedSeconds / 10) * 100;
+            progressBar.style.width = Math.min(progressPercent, 100) + "%";
+
+            if (elapsedSeconds >= 10) stopMusic(true);
+        }, 1000);
     }
 
     async function playResolvedAudio(srcUrl, startOffset = 0) {
         currentPreviewUrl = srcUrl;
+
         audio.pause();
+        audio.removeAttribute('src');
         audio.src = srcUrl;
-        await audio.load();
-        try { audio.currentTime = startOffset; } catch(e) {}
+        audio.load();
+
+        await new Promise((resolve, reject) => {
+            let settled = false;
+
+            const cleanup = () => {
+                audio.removeEventListener('loadedmetadata', onMeta);
+                audio.removeEventListener('canplay', onCanPlay);
+                audio.removeEventListener('error', onError);
+            };
+
+            const done = () => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                resolve();
+            };
+
+            const onMeta = () => done();
+            const onCanPlay = () => done();
+            const onError = () => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                reject(new Error('AUDIO_LOAD_ERROR'));
+            };
+
+            audio.addEventListener('loadedmetadata', onMeta, { once: true });
+            audio.addEventListener('canplay', onCanPlay, { once: true });
+            audio.addEventListener('error', onError, { once: true });
+
+            if (audio.readyState >= 1) done();
+        });
+
+        try {
+            audio.currentTime = Math.max(0, Number(startOffset) || 0);
+        } catch (_) {}
+
         await audio.play();
         startRoundTimer();
+        return true;
     }
 
-    async function startSong(song) {
+    async function prefetchSongPreview(song) {
+        if (!song || song.audioSource || getCachedPreview(song)) return;
+        try {
+            await resolveItunesPreview(song);
+        } catch (e) {
+            console.debug('Prefetch iTunes pominięty:', song.title, e);
+        }
+    }
+
+    async function startSong(song, isRetry = false) {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+        resetFullPreviewState();
         selectedSong = song;
+
         document.getElementById('categoryScreen').style.display = 'none';
         document.getElementById('gameScreen').style.display = 'block';
         document.getElementById('currentCategory').innerText = song.category;
+        homeBtn.style.display = 'flex';
+
         answerBox.style.display = 'none';
         revealBtn.style.display = 'none';
         stopBtn.disabled = true;
-        statusMsg.innerText = "Ładowanie...";
+        progressBar.style.width = "0%";
+
+        elapsedSeconds = 0;
+        finalAmount = (isReviewMode || currentRound === 1) ? 100 : 200;
+        moneyDisplay.innerText = finalAmount;
+
+        const requestId = ++audioRequestId;
+        statusMsg.innerText = song.audioSource
+            ? "Ładowanie pliku MP3..."
+            : "Wyszukiwanie próbki w iTunes...";
+
         try {
-            let src = song.audioSource || await resolveItunesPreview(song);
-            await playResolvedAudio(src, song.startSec || 0);
-        } catch(e) { statusMsg.innerText = "Błąd ładowania."; }
+            let srcUrl = song.audioSource || null;
+
+            if (!srcUrl) {
+                srcUrl = await resolveItunesPreview(song);
+            }
+
+            if (requestId !== audioRequestId || selectedSong !== song) return;
+
+            await playResolvedAudio(srcUrl, song.startSec || 0);
+        } catch (err) {
+            console.error("Błąd audio:", err);
+            stopBtn.disabled = true;
+            clearInterval(timerInterval);
+
+            setAudioStatusError(
+                song.audioSource
+                    ? "Nie udało się załadować lokalnego pliku MP3."
+                    : "Nie udało się odtworzyć próbki audio z iTunes."
+            );
+        }
+    }
+
+    const stopReactionSounds = [
+        'stop-reakcja-1.mp3', 'stop-reakcja-2.mp3', 'stop-reakcja-3.mp3', 'stop-reakcja-4.mp3',
+        'stop-reakcja-5.mp3', 'stop-reakcja-6.mp3', 'stop-reakcja-7.mp3', 'stop-reakcja-8.mp3',
+        'stop-reakcja-9.mp3', 'stop-reakcja-10.mp3', 'stop-reakcja-11.mp3', 'stop-reakcja-12.mp3'
+    ];
+
+    let recentReactionIndices = [];
+
+    function playRandomStopReaction() {
+        const stopReactionAudio = document.getElementById('stopReactionAudio');
+        let randomIndex;
+        do {
+            randomIndex = Math.floor(Math.random() * stopReactionSounds.length);
+        } while (recentReactionIndices.includes(randomIndex));
+
+        recentReactionIndices.push(randomIndex);
+        if (recentReactionIndices.length > 3) recentReactionIndices.shift();
+
+        stopReactionAudio.src = stopReactionSounds[randomIndex];
+        stopReactionAudio.currentTime = 0;
+        stopReactionAudio.play().catch(e => console.log('Błąd audio reakcji:', e));
     }
 
     function stopMusic(timeOut = false) {
-        audio.pause(); clearInterval(timerInterval); stopBtn.disabled = true; revealBtn.style.display = 'block';
-        if (timeOut) { statusMsg.innerText = "Czas minął!"; document.getElementById('resultText').innerText = "0 zł"; }
-        else { statusMsg.innerText = "Zatrzymano!"; document.getElementById('resultText').innerText = "Wynik: " + finalAmount + " zł"; totalSessionMoney += finalAmount; playRandomStopReaction(); }
+        audio.pause();
+        clearInterval(timerInterval);
+        stopBtn.disabled = true;
+        revealBtn.style.display = 'block';
+
+        if (timeOut) {
+            statusMsg.innerText = "Czas minął!";
+            document.getElementById('resultText').innerText = "Brak reakcji w 10 sekund. Zdobyto: 0 zł";
+            finalAmount = 0;
+        } else {
+            statusMsg.innerText = "Zatrzymano!";
+            document.getElementById('resultText').innerText = "Do Twojego konta trafia: " + finalAmount + " zł";
+            totalSessionMoney += finalAmount;
+
+            setTimeout(() => {
+                playRandomStopReaction();
+            }, 500);
+        }
+    }
+
+    function showSplitButtons() {
+        document.getElementById('mainSpeakerBtn').style.display = 'none';
+        document.getElementById('splitSpeakerContainer').style.display = 'flex';
+    }
+
+    function speakWithLang(langCode) {
+        if (!selectedSong) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(selectedSong.title);
+            utterance.lang = langCode;
+            utterance.rate = 0.88;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("Twoja przeglądarka nie obsługuje syntezatora mowy.");
+        }
     }
 
     function revealAnswer() {
         document.getElementById('answerText').innerText = selectedSong.title;
         document.getElementById('mainSpeakerBtn').style.display = 'block';
         document.getElementById('splitSpeakerContainer').style.display = 'none';
-        document.getElementById('feedbackBtns').style.display = 'flex';
+
+        let labelYes = isReviewMode ? "Już znam" : "Znałam";
+        let labelNo = isReviewMode ? "Nie znałam" : "Nie znałam";
+
+        let feedbackHtml = `
+            <button class="feedback-btn" onclick="handleFeedback(true)" style="background: #2ecc71;">✅ ${labelYes}</button>
+            <button class="feedback-btn" onclick="handleFeedback(false)" style="background: #e74c3c;">❌ ${labelNo}</button>
+        `;
+        
+        let existingFeedback = document.getElementById('feedbackBtns');
+        existingFeedback.innerHTML = feedbackHtml;
+        existingFeedback.style.display = 'flex';
+
         answerBox.style.display = 'block';
         revealBtn.style.display = 'none';
         if (!playedIds.includes(selectedSong.id)) playedIds.push(selectedSong.id);
     }
-    
-    // Uzupełnienie funkcji pomocniczych, które były w oryginale...
-    // [Reszta logiki pozostaje bez zmian]
+
+    function toggleFullPreview() {
+        const btn = document.getElementById('listenFullBtn');
+        if (!currentPreviewUrl || !selectedSong) return;
+
+        if (!isFullPlaying) {
+            audio.pause();
+            audio.src = currentPreviewUrl;
+            audio.load();
+
+            const startOffset = (selectedSong && selectedSong.startSec)
+                ? selectedSong.startSec
+                : 0;
+
+            const executeFullPlay = async () => {
+                try {
+                    audio.currentTime = startOffset;
+                    await audio.play();
+
+                    isFullPlaying = true;
+                    btn.innerText = "⏹ Zatrzymaj odsłuch (30s)";
+                    btn.style.background = "linear-gradient(180deg, #e74c3c 0%, #c0392b 100%)";
+
+                    clearTimeout(fullPreviewTimer);
+                    fullPreviewTimer = setTimeout(() => {
+                        if (isFullPlaying) toggleFullPreview();
+                    }, 30000);
+                } catch (e) {
+                    console.warn('Błąd pełnego odsłuchu:', e);
+                    setAudioStatusError("Nie udało się rozpocząć pełnego odsłuchu próbki.");
+                }
+            };
+
+            if (audio.readyState >= 1) {
+                executeFullPlay();
+            } else {
+                const onMeta = () => {
+                    audio.removeEventListener('loadedmetadata', onMeta);
+                    executeFullPlay();
+                };
+                audio.addEventListener('loadedmetadata', onMeta);
+                audio.load();
+            }
+        } else {
+            audio.pause();
+            resetFullPreviewState();
+        }
+    }
+
+    function handleFeedback(isKnown) {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        if (isFullPlaying) {
+            audio.pause();
+            resetFullPreviewState();
+        }
+
+        playFeedbackSound(isKnown);
+
+        let fb = document.getElementById('feedbackBtns');
+        if (fb) fb.style.display = 'none';
+
+        if (isReviewMode) {
+            if (isKnown) {
+                removeReviewSong(selectedSong.query);
+            }
+        } else {
+            if (!isKnown) {
+                addReviewSong(selectedSong);
+            }
+        }
+    }
+
+    function backToCategories() {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        if (isFullPlaying) {
+            audio.pause();
+            resetFullPreviewState();
+        }
+
+        const stopReactionAudio = document.getElementById('stopReactionAudio');
+        if (stopReactionAudio) {
+            stopReactionAudio.pause();
+            stopReactionAudio.currentTime = 0;
+        }
+
+        document.getElementById('gameScreen').style.display = 'none';
+        
+        if (playedIds.length >= activeCategoriesSet.length) {
+            showSummaryScreen();
+        } else {
+            document.getElementById('categoryScreen').style.display = 'block';
+            renderCategories();
+        }
+    }
+
+    function showSummaryScreen() {
+        document.getElementById('summaryScreen').style.display = 'block';
+        document.getElementById('totalMoneyDisplay').innerText = totalSessionMoney;
+        homeBtn.style.display = 'flex';
+        updateReviewMenuButton();
+    }
+
+    window.onload = function() {
+        updateReviewMenuButton();
+    };
 </script>
+
 </body>
 </html>
