@@ -16,32 +16,63 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="manifest" href="manifest.json">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
-        html { background-color: #020611; width: 100%; height: 100%; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            touch-action: manipulation; 
+        }
+        
+        /* ZRESETOWANIE MARGINESÓW I PEŁNA BLOKADA EKRANU */
+        html, body {
+            width: 100%;
+            height: 100%;
+            position: fixed; /* Absolutna blokada scrollowania na iOS/PC */
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow: hidden;
+            overscroll-behavior: none;
+            margin: 0;
+            padding: 0;
+            background-color: #020611;
+        }
+
+        /* NIESKOŃCZONE TŁO (wypuszczone za ekran, likwiduje odcięcie na dole) */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -100px; left: -100px; right: -100px; bottom: -100px; /* Gradient wychodzi poza fizyczny ekran */
+            background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
+            z-index: -2;
+            pointer-events: none;
+        }
+
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
-            background-color: #020611;
             color: #ffffff;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            padding-top: max(15px, env(safe-area-inset-top));
-            padding-bottom: max(15px, env(safe-area-inset-bottom));
-            padding-left: max(15px, env(safe-area-inset-left));
-            padding-right: max(15px, env(safe-area-inset-right));
-            overflow: hidden;
+            align-items: center; /* Idealne geometryczne wyśrodkowanie karty */
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
         }
-        #fxCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
+        /* POWIĘKSZONY CANVAS (żeby animacje nutek nie ścinały się na krawędzi obudowy) */
+        #fxCanvas { 
+            position: absolute; 
+            top: -50px; 
+            left: 0; 
+            width: 100vw; 
+            height: calc(100vh + 150px); /* O wiele wyższy niż ekran */
+            pointer-events: none; 
+            z-index: -1; 
+        }
+
+        /* PRZYCISK HOME DOPASOWANY DO NOTCHA */
         .home-btn {
-            position: fixed;
-            top: max(15px, env(safe-area-inset-top));
-            left: max(15px, env(safe-area-inset-left));
+            position: absolute;
+            top: max(20px, env(safe-area-inset-top));
+            left: max(20px, env(safe-area-inset-left));
             z-index: 99999;
             background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(8px);
@@ -58,18 +89,23 @@
             -webkit-tap-highlight-color: transparent;
         }
         .home-btn:active { transform: scale(0.88); background: rgba(220, 38, 38, 0.85); border-color: #ff4d4d; }
+
         .card {
             background: rgba(15, 23, 42, 0.88);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 30px 20px;
             border-radius: 24px;
             box-shadow: 0 0 50px rgba(0, 180, 216, 0.3);
+            width: 92%; /* Dynamiczna szerokość zamiast twardych paddingów */
             max-width: 480px;
-            width: 100%;
+            max-height: 88vh; /* Nigdy nie przykryje notcha i dolnego paska */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             text-align: center;
             backdrop-filter: blur(12px);
             position: relative;
             z-index: 10;
+            padding: 30px 20px;
             transition: filter 0.8s ease-in-out, opacity 0.8s ease-in-out, transform 0.6s ease-in-out;
         }
         .blur-effect { filter: blur(15px); opacity: 0.2; }
@@ -146,12 +182,31 @@
             0% { transform: translateY(0) rotate(-6deg) scale(1); }
             100% { transform: translateY(-12px) rotate(6deg) scale(1.04); }
         }
+
         @media (max-width: 480px) {
+            .card {
+                padding: 20px 14px; /* Kompaktowy padding na mniejszych ekranach */
+                max-height: 92vh; /* Dodatkowa przestrzeń w pionie */
+            }
+            h1 { font-size: 23px; margin-bottom: 14px; }
+            .menu-grid { gap: 10px; margin-top: 6px; }
+            .menu-btn { padding: 14px 12px; }
+            .menu-btn-title { font-size: 18px; }
+            .categories-grid { gap: 8px; margin-bottom: 12px; }
+            .cat-btn { padding: 11px 14px; font-size: 14.5px; }
+            .money-number { font-size: 36px; }
+            .money-wrapper { margin: 10px 0; }
+            .category-pill { font-size: 16px; padding: 8px 18px; margin: 8px 0 12px 0; }
+            .btn-stop { padding: 13px; font-size: 18px; }
+            .btn-action, .feedback-btn, .btn-speaker-main, .btn-split-lang {
+                padding: 10px 12px; font-size: 14px;
+            }
             .robert-speech-container { transform: translateX(-18%); }
             .dancing-robert { width: 140px; height: 180px; }
             .speech-bubble-wrapper { width: 240px; left: 75px; top: -30px; }
             .speech-text { font-size: 13.5px; line-height: 1.2; left: 18px; right: 18px; top: 10px; height: 80px; }
         }
+
         .menu-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
         .menu-btn {
             background: linear-gradient(135deg, rgba(0, 119, 182, 0.6), rgba(0, 180, 216, 0.4));
@@ -275,9 +330,11 @@
         .reload-icon { display: inline-block; }
         .spin-anim { animation: spin 0.4s ease-in-out; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         .answer-box {
             background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 12px; border-radius: 12px; margin-top: 12px; display: none;
+            overflow-y: auto;
         }
         .answer-title { font-size: 18px; font-weight: bold; color: #ffb703; margin-top: 3px; }
         .btn-action {
@@ -331,7 +388,62 @@
         .btn-split-lang:active { transform: scale(0.95); }
         .status-msg { color: #8ecae6; font-size: 13px; margin-bottom: 3px; font-style: italic; }
         .status-msg button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
-    </style>
+    
+
+        /* ================================================================
+           MOBILE/PWA FIX — TYLKO TELEFONY
+           Oryginalna czołówka, animacje i JS pozostają bez zmian.
+           Nie zmieniamy geometrii animacji — naprawiamy tylko warstwę viewportu.
+           ================================================================ */
+        @media (max-width: 767px) {
+            /* Safari/PWA potrafi przyciąć ujemne warstwy body na granicy viewportu.
+               Canvas jest więc prawdziwą warstwą fixed nad tłem, ale pod kartą. */
+            html {
+                width: 100%;
+                min-height: 100%;
+                background: #020611;
+                overflow: hidden;
+            }
+
+            html::before {
+                content: '';
+                position: fixed;
+                z-index: -10;
+                left: -80px;
+                top: -80px;
+                width: calc(100% + 160px);
+                height: calc(100% + 160px);
+                background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
+                pointer-events: none;
+            }
+
+            body {
+                background: transparent;
+                isolation: isolate;
+            }
+
+            /* Ważne: nie zwiększamy canvasu i nie przesuwamy jego współrzędnych.
+               Tylko przestajemy pozwalać, aby był przycinany jako ujemna warstwa. */
+            #fxCanvas {
+                position: fixed;
+                inset: -1px;
+                width: calc(100% + 2px);
+                height: calc(100% + 2px);
+                z-index: 0;
+                display: block;
+                pointer-events: none;
+            }
+
+            /* Karta pozostaje ponad animacją. Jej pozycję zachowuje flex body,
+               więc nie ingerujemy w transform używany przez czołówkę. */
+            .card {
+                z-index: 10;
+                margin: auto;
+            }
+
+            .home-btn { z-index: 99999; }
+        }
+</style>
 </head>
 <body>
 
@@ -459,6 +571,16 @@
     let clickAudioContext = null;
     let uiAudioCtx = null;
 
+    // Blokada zoomu i przesuwania na iOS
+    document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+    });
+    document.addEventListener('touchmove', function (e) {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
     function playClickSound() {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -539,10 +661,13 @@
     const ctx = canvas.getContext('2d');
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
 
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const w = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0, screen.width || 0);
+        const h = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0, screen.height || 0);
+        canvas.width = w;
+        canvas.height = h + 150; // +150px zapasu, aby nutki nie ścinały się na dole obudowy
     }
 
     let particles = [];
@@ -571,9 +696,9 @@
         const notesSymbols = ['♪', '♫', '♬', '♩'];
         musicNotes.push({
             x: Math.random() * canvas.width,
-            y: canvas.height + 40,
-            vy: Math.random() * 3 + 2,
-            vx: (Math.random() - 0.5) * 2.5,
+            y: canvas.height + 20, // Start z ukrytej, przedłużonej na dole strefy
+            vy: Math.random() * 2.5 + 1.8,
+            vx: (Math.random() - 0.5) * 2,
             alpha: 1,
             symbol: notesSymbols[Math.floor(Math.random() * notesSymbols.length)],
             size: Math.random() * 14 + 22
@@ -599,7 +724,7 @@
 
         musicNotes.forEach((n, index) => {
             n.y -= n.vy; n.x += n.vx;
-            if (n.y < canvas.height * 0.2) n.alpha -= 0.02;
+            if (n.y < canvas.height * 0.15) n.alpha -= 0.025;
             ctx.save();
             ctx.globalAlpha = Math.max(n.alpha, 0);
             ctx.fillStyle = '#ffd700';
@@ -607,7 +732,7 @@
             ctx.shadowColor = '#ffb703'; ctx.shadowBlur = 15;
             ctx.fillText(n.symbol, n.x, n.y);
             ctx.restore();
-            if (n.y < -50 || n.alpha <= 0) musicNotes.splice(index, 1);
+            if (n.y < -60 || n.alpha <= 0) musicNotes.splice(index, 1);
         });
 
         particles.forEach((p, index) => {
@@ -768,7 +893,7 @@
         { category: "Natalia Przybysz", query: "Nazywam Sie Niebo", title: "Nazywam Sie Niebo - Natalia Przybysz" },
         { category: "Procol Harum", query: "A Whiter Shade of Pale", title: "A Whiter Shade of Pale - Procol Harum" },
         { category: "Wham!", query: "Wake Me Up Before You Go-Go", title: "Wake Me Up Before You Go-Go - Wham!" },
-        { category: "Lao Che", query: "Stare标志 Miasto", title: "Stare Miasto - Lao Che" },
+        { category: "Lao Che", query: "Stare Miasto", title: "Stare Miasto - Lao Che" },
         { category: "Magda Umer", query: "Koncert jesienny na dwa świerszcze i wiatr w kominie", title: "Koncert jesienny na dwa świerszcze i wiatr w kominie - Magda Umer" },
         { category: "Earth, Wind & Fire", query: "Let's Groove", title: "Let's Groove - Earth, Wind & Fire" },
         { category: "Gotye", query: "Somebody That I Used to Know", title: "Somebody That I Used to Know - Gotye" },
@@ -785,7 +910,7 @@
         { category: "Chappell Roan", query: "Good Luck, Babe!", title: "Good Luck, Babe! - Chappell Roan" },
         { category: "Jan Pietrzak", query: "Żeby Polska", title: "Żeby Polska - Jan Pietrzak" },
         { category: "Avicii", query: "Levels", title: "Levels - Avicii" },
-        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To标志 Co Mam - Kasia Kowalska" },
+        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To Co Mam - Kasia Kowalska" },
         { category: "Stare Dobre Małżeństwo", query: "Czarny Blues O Czwartej Nad Ranem", title: "Czarny Blues O Czwartej Nad Ranem - Stare Dobre Małżeństwo" },
         { category: "Gigi D'Agostino", query: "L'amour toujours", title: "L'amour toujours - Gigi D'Agostino" },
         { category: "Metallica", query: "Nothing Else Matters", title: "Nothing Else Matters - Metallica" },
@@ -901,7 +1026,7 @@
         { category: "Bon Jovi", query: "It's My Life", title: "It's My Life - Bon Jovi" },
         { category: "Bon Jovi", query: "Livin' On A Prayer", title: "Livin' On A Prayer - Bon Jovi" },
         { category: "Wojciech Gąssowski", query: "Gdzie Się Podziały Tamte Prywatki", title: "Gdzie Się Podziały Tamte Prywatki - Wojciech Gassowski" },
-        { category: "Maria Koterbska", query: "Karuzela", title: "Karuzela - Maria标志 Koterbska" },
+        { category: "Maria Koterbska", query: "Karuzela", title: "Karuzela - Maria Koterbska" },
         { category: "Maria Koterbska", query: "Serduszko Puka W Rytmie Cha-Cha", title: "Serduszko Puka W Rytmie Cha-Cha - Maria Koterbska" },
         { category: "Piotr Szczepanik", query: "Kochać", title: "Kochać - Piotr Szczepanik" },
         { category: "Piotr Szczepanik", query: "Goniąc kormorany", title: "Goniąc kormorany - Piotr Szczepanik, Alibabki & Ricercar 64" },
@@ -960,9 +1085,9 @@
         { category: "Łzy", query: "Agnieszka Już Dawno …", title: "Agnieszka Już Dawno … - Lzy" },
         { category: "Feel", query: "Jak Anioła Głos", title: "Jak Anioła Głos - Feel" },
         { category: "Feel", query: "No pokaz Na Co Cie Stac", title: "No pokaz Na Co Cie Stac - Feel" },
-        { category: "Feel", query: "A Gdy Jest Juz Ciemno", title: "A Gdy Jest标志 Juz Ciemno - Feel" },
+        { category: "Feel", query: "A Gdy Jest Juz Ciemno", title: "A Gdy Jest Juz Ciemno - Feel" },
         { category: "Kwiat Jabłoni", query: "Od nowa", title: "Od nowa - Kwiat Jabłoni" },
-        { category: "Kwiat Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś标志 Późno Pójdę Spać - Kwiat Jabłoni" },
+        { category: "Kwiat Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś Późno Pójdę Spać - Kwiat Jabłoni" },
         { category: "Daria Zawiałow", query: "Kaonashi", title: "Kaonashi - Daria Zawiałow" },
         { category: "Mrozu", query: "Aura", title: "Aura - Mrozu" },
         { category: "Mrozu", query: "Jak Nie My To Kto", title: "Jak Nie My To Kto - Mrozu" },
@@ -1095,7 +1220,7 @@
         { category: "Czerwone Gitary", query: "Anna Maria", title: "Anna Maria - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Nikt Na Swiecie Nie Wie", title: "Nikt Na Swiecie Nie Wie - Czerwone Gitary & Orkiestra Symfoników Gdańskich" },
         { category: "Czerwone Gitary", query: "Matura", title: "Matura - Czerwone Gitary" },
-        { category: "Nie Zadzieraj Nosa", query: "Nie Zadzieraj Nosa", title: "Nie Zadzieraj Nosa - Czerwone Gitary" },
+        { category: "Czerwone Gitary", query: "Nie Zadzieraj Nosa", title: "Nie Zadzieraj Nosa - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Tak Bardzo Sie Staralem", title: "Tak Bardzo Sie Staralem - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Dozwolone Do Lat Osiemnastu", title: "Dozwolone Do Lat Osiemnastu - Czerwone Gitary" },
         { category: "Ryszard Rynkowski", query: "Dziewczyny Lubią Brąz", title: "Dziewczyny Lubią Brąz - Ryszard Rynkowski" },
@@ -1120,7 +1245,7 @@
         { category: "Budka Suflera", query: "Bal Wszystkich Świętych", title: "Bal Wszystkich Świętych - Budka Suflera" },
         { category: "Budka Suflera", query: "Cień Wielkiej Góry", title: "Cień Wielkiej Góry - Budka Suflera" },
         { category: "Budka Suflera", query: "Za ostatni grosz", title: "Za ostatni grosz - Budka Suflera" },
-        { category: "Budka Suflera", query: "Ratujmy Co Się Da", title: "Ratujmy Co标志 Się Da - Budka Suflera" },
+        { category: "Budka Suflera", query: "Ratujmy Co Się Da", title: "Ratujmy Co Się Da - Budka Suflera" },
         { category: "Bajm", query: "Biala Armia", title: "Biala Armia - Bajm" },
         { category: "Bajm", query: "Co Mi Panie Dasz", title: "Co Mi Panie Dasz - Bajm" },
         { category: "Bajm", query: "Piechotą Do Lata", title: "Piechotą Do Lata - Bajm" },
@@ -1341,7 +1466,7 @@
         { category: "Zdzisława Sośnicka", query: "Będzie, Co Ma Być", title: "Będzie, Co Ma Być - Zdzisława Sośnicka" },
         { category: "Urszula Sipińska", query: "Są takie dni w tygodniu", title: "Są takie dni w tygodniu - Urszula Sipinska" },
         { category: "Urszula Sipińska", query: "To Był Świat W Zupełnie Starym Stylu", title: "To Był Świat W Zupełnie Starym Stylu - Urszula Sipinska" },
-        { category: "Marek Grechuta", query: "Bedziesz Moją标志 Panią", title: "Bedziesz Moją Panią - Marek Grechuta & Anawa" },
+        { category: "Marek Grechuta", query: "Bedziesz Moją Panią", title: "Bedziesz Moją Panią - Marek Grechuta & Anawa" },
         { category: "Marek Grechuta", query: "Nie Dokazuj", title: "Nie Dokazuj - Marek Grechuta & Anawa" },
         { category: "Marek Grechuta", query: "Świecie Nasz", title: "Świecie Nasz - Marek Grechuta" },
         { category: "Grzegorz Turnau", query: "Cichosza", title: "Cichosza - Grzegorz Turnau" },
@@ -1375,7 +1500,7 @@
         { category: "Budka Suflera", query: "Sen O Dolinie", title: "Sen O Dolinie - Budka Suflera" },
         { category: "Budka Suflera", query: "Nie Wierz Nigdy Kobiecie", title: "Nie Wierz Nigdy Kobiecie - Budka Suflera" },
         { category: "2 Plus 1", query: "Chodź, pomaluj mój świat", title: "Chodź, pomaluj mój świat - 2 Plus 1" },
-        { category: "2 Plus 1", query: "Lekkoduch", title: "Lekkoduch -标志 Pięć Dwa, Hans Solo & Deep" },
+        { category: "2 Plus 1", query: "Lekkoduch", title: "Lekkoduch - Pięć Dwa, Hans Solo & Deep" },
         { category: "2 Plus 1", query: "Słońca", title: "Słońca - Dwa plus Jeden" },
         { category: "2 Plus 1", query: "Requiem dla samej siebie", title: "Requiem dla samej siebie - 2 Plus 1" },
         { category: "Kasia Sobczyk", query: "O mnie się nie martw", title: "O mnie się nie martw - Katarzyna Sobczyk" },
@@ -1457,7 +1582,7 @@
         { category: "Mr. President", query: "Coco Jamboo", title: "Coco Jamboo - Mr. President" },
         { category: "Loona", query: "Bailando", title: "Bailando - Loona" },
         { category: "Corona", query: "The Rhythm Of The Night", title: "The Rhythm Of The Night - Corona" },
-        { category: "Michel Teló", query: "Ai Se Eu Te Pego", title: "Ai标志 Se Eu Te Pego - Michel Teló" },
+        { category: "Michel Teló", query: "Ai Se Eu Te Pego", title: "Ai Se Eu Te Pego - Michel Teló" },
         { category: "Juanes", query: "La Camisa Negra", title: "La Camisa Negra - Juanes" },
         { category: "Gusttavo Lima", query: "Balada", title: "Balada - Gusttavo Lima" },
         { category: "Sistars", query: "Sutra", title: "Sutra - Sistars" },
@@ -1557,7 +1682,7 @@
         { category: "After Party", query: "Tylko Ona Jedyna", title: "Tylko Ona Jedyna - After Party" },
         { category: "Piękni i Młodzi", query: "Niewiara", title: "Niewiara - Piękni I Młodzi" },
         { category: "Playboys", query: "Lejde", title: "Lejde - Playboys" },
-        { category: "Riccardo Fogli", query: "Storie Di Tutti I标志 Giorni", title: "Storie Di Tutti I Giorni - Riccardo Fogli" },
+        { category: "Riccardo Fogli", query: "Storie Di Tutti I Giorni", title: "Storie Di Tutti I Giorni - Riccardo Fogli" },
         { category: "Gigliola Cinquetti", query: "Non Ho L' Eta'", title: "Non Ho L' Eta' - Gigliola Cinquetti" },
         { category: "Desireless", query: "Voyage voyage Desireless", title: "Voyage voyage - Desireless" },
         { category: "ZAZ", query: "Je veux", title: "Je veux - ZAZ" },
@@ -1709,7 +1834,7 @@
         { category: "Ed Sheeran", query: "Thinking Out Loud", title: "Thinking Out Loud - Ed Sheeran" },
         { category: "Wilki", query: "Eli Lama Sabachtani", title: "Eli Lama Sabachtani - Wilki" },
         { category: "Wojciech Gąssowski", query: "Jeszcze W Zielone Gramy", title: "Jeszcze W Zielone Gramy - Wojciech Młynarski" },
-        { category: "Journey", query: "Don't Stop Believin'", title: "Don't标志 Stop Believin' - Journey" },
+        { category: "Journey", query: "Don't Stop Believin'", title: "Don't Stop Believin' - Journey" },
         { category: "Guns N' Roses", query: "Sweet Child O' Mine", title: "Sweet Child O' Mine - Guns N' Roses" },
         { category: "AC/DC", query: "Thunderstruck", title: "Thunderstruck - AC/DC" },
         { category: "AC/DC", query: "Highway to Hell", title: "Highway to Hell - AC/DC" },
@@ -1743,9 +1868,6 @@
     let currentPreviewUrl = null;
     let fullPreviewTimer = null;
     let isFullPlaying = false;
-
-    // Historia ostatnich 5 losowań dla Rundy 1 i 2
-    let recentCategorySetsHistory = [];
 
     const audio = document.getElementById('audioPlayer');
     const moneyDisplay = document.getElementById('moneyDisplay');
@@ -1966,29 +2088,9 @@
         playedIds = [];
         const requiredCount = currentRound === 1 ? 5 : 3;
         
-        // Wyciągamy wszystkie unikalne kategorie
         const categoriesList = [...new Set(masterSongPool.map(item => item.category))];
-
-        // Wyciągamy zablokowane kategorie z ostatnich 5 losowań
-        const blockedCategories = recentCategorySetsHistory.flat();
-
-        // Filtrujemy kategorie, pomijając te z ostatnich 5 losowań
-        let availableCategories = categoriesList.filter(cat => !blockedCategories.includes(cat));
-
-        // Zabezpieczenie: jeśli pula dostępnych kategorii jest mniejsza niż wymagana ilość, resetujemy historię
-        if (availableCategories.length < requiredCount) {
-            recentCategorySetsHistory = [];
-            availableCategories = categoriesList;
-        }
-
-        const shuffledCategories = availableCategories.sort(() => 0.5 - Math.random());
+        const shuffledCategories = categoriesList.sort(() => 0.5 - Math.random());
         const selectedCategories = shuffledCategories.slice(0, requiredCount);
-
-        // Zapisujemy wylosowane kategorie do historii ostatnich 5 losowań
-        recentCategorySetsHistory.push(selectedCategories);
-        if (recentCategorySetsHistory.length > 5) {
-            recentCategorySetsHistory.shift();
-        }
 
         activeCategoriesSet = selectedCategories.map((catName, index) => {
             const availableSongs = masterSongPool.filter(s => s.category === catName);
@@ -2029,23 +2131,18 @@
             btn.innerHTML = `<span>${item.category}</span> <span>${isPlayed ? '✓' : '➔'}</span>`;
             if (!isPlayed) {
                 btn.onclick = () => startSong(item);
-                // Usunięto prefetchSongPreview(item) - brak zapytań w tle chroni przed banem IP przy spamowaniu shuffle!
+                prefetchSongPreview(item);
             }
             list.appendChild(btn);
         });
     }
 
     // =========================================================================
-    // ODTWARZANIE AUDIO - WERSJA NAPRAWIONA DLA TELEFONÓW / SAFARI / CHROME
+    // ODTWARZANIE AUDIO - PEŁNE WSPARCIE DLA TELEFONÓW / SAFARI / CHROME
     // =========================================================================
-
     const ITUNES_CACHE_KEY = 'kindziu_itunes_preview_cache_v3';
     const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14; // 14 dni
-    let audioUnlocked = false;
     let audioRequestId = 0;
-
-    const MOBILE_SILENCE_WAV =
-        'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YQAAAAAA';
 
     function readItunesCache() {
         try {
@@ -2059,8 +2156,7 @@
     function writeItunesCache(cache) {
         try {
             localStorage.setItem(ITUNES_CACHE_KEY, JSON.stringify(cache));
-        } catch (e) {
-        }
+        } catch (e) {}
     }
 
     function songCacheKey(song) {
@@ -2080,67 +2176,6 @@
         const cache = readItunesCache();
         cache[songCacheKey(song)] = { url, savedAt: Date.now() };
         writeItunesCache(cache);
-    }
-
-    function normalizeText(value) {
-        return String(value || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9]+/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-    }
-
-    function tokenScore(a, b) {
-        const aa = normalizeText(a).split(' ').filter(Boolean);
-        const bb = new Set(normalizeText(b).split(' ').filter(Boolean));
-        if (!aa.length || !bb.size) return 0;
-        let hits = 0;
-        aa.forEach(t => { if (bb.has(t)) hits++; });
-        return hits / aa.length;
-    }
-
-    function scoreItunesResult(result, song) {
-        const artist = result.artistName || '';
-        const track = result.trackName || '';
-
-        const artistTarget = normalizeText(song.category);
-        const titleTarget = normalizeText(song.query);
-        const artistResult = normalizeText(artist);
-        const titleResult = normalizeText(track);
-
-        let score = 0;
-        if (artistResult === artistTarget) score += 100;
-        if (titleResult === titleTarget) score += 100;
-
-        score += tokenScore(song.category, artist) * 40;
-        score += tokenScore(song.query, track) * 60;
-
-        const full = `${artist} ${track}`.toLowerCase();
-        if (titleTarget && full.includes(titleTarget)) score += 35;
-        if (artistTarget && full.includes(artistTarget)) score += 25;
-
-        if (!result.previewUrl) score -= 1000;
-
-        return score;
-    }
-
-    async function fetchJsonWithTimeout(url, timeoutMs = 9000) {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            const response = await fetch(url, {
-                method: 'GET',
-                cache: 'no-store',
-                signal: controller.signal,
-                headers: { 'Accept': 'application/json' }
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return await response.json();
-        } finally {
-            clearTimeout(timer);
-        }
     }
 
     function itunesJsonp(term, country = null, timeoutMs = 10000) {
