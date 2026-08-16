@@ -27,7 +27,7 @@
         html, body {
             width: 100%;
             height: 100%;
-            position: fixed; /* Absolutna blokada scrollowania i przesuwania */
+            position: fixed; /* Absolutna blokada scrollowania na iOS/PC */
             top: 0; left: 0; right: 0; bottom: 0;
             overflow: hidden;
             overscroll-behavior: none;
@@ -36,38 +36,39 @@
             background-color: #020611;
         }
 
+        /* NIESKOŃCZONE TŁO (wypuszczone za ekran, likwiduje odcięcie na dole) */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -100px; left: -100px; right: -100px; bottom: -100px; /* Gradient wychodzi poza fizyczny ekran */
+            background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
+            z-index: -2;
+            pointer-events: none;
+        }
+
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             color: #ffffff;
             display: flex;
             justify-content: center;
-            align-items: center; /* Matematyczne wyśrodkowanie karty */
+            align-items: center; /* Idealne geometryczne wyśrodkowanie karty */
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
-            /* Usunięte asymetryczne safe-area, żeby nie wypychało karty w górę! */
         }
 
-        /* POJEMNIK NA TŁO I NUTKI - WYPUSZCZONY ZNACZNIE POZA EKRAN, ABY ZABEZPIECZYĆ PRZED ODCIĘCIEM NA DOLE */
-        #bg-wrapper {
-            position: absolute;
-            top: -100px;
-            left: -100px;
-            right: -100px;
-            bottom: -100px; /* Najważniejsze: wypuszcza dół o 100px głębiej pod ekran telefonu */
-            background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
-            z-index: -2;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
+        /* POWIĘKSZONY CANVAS (żeby animacje nutek nie ścinały się na krawędzi obudowy) */
         #fxCanvas { 
-            width: 100%; 
-            height: 100%; 
-            display: block;
+            position: absolute; 
+            top: -50px; 
+            left: 0; 
+            width: 100vw; 
+            height: calc(100vh + 150px); /* O wiele wyższy niż ekran */
+            pointer-events: none; 
+            z-index: -1; 
         }
 
-        /* PRZYCISK HOME */
+        /* PRZYCISK HOME DOPASOWANY DO NOTCHA */
         .home-btn {
             position: absolute;
             top: max(20px, env(safe-area-inset-top));
@@ -89,15 +90,14 @@
         }
         .home-btn:active { transform: scale(0.88); background: rgba(220, 38, 38, 0.85); border-color: #ff4d4d; }
 
-        /* GŁÓWNA KARTA ROZGRYWKI */
         .card {
             background: rgba(15, 23, 42, 0.88);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 24px;
             box-shadow: 0 0 50px rgba(0, 180, 216, 0.3);
-            width: 92%; 
+            width: 92%; /* Dynamiczna szerokość zamiast twardych paddingów */
             max-width: 480px;
-            max-height: 90vh; /* Zapobiega wylaniu się poza ekran */
+            max-height: 88vh; /* Nigdy nie przykryje notcha i dolnego paska */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -108,7 +108,6 @@
             padding: 30px 20px;
             transition: filter 0.8s ease-in-out, opacity 0.8s ease-in-out, transform 0.6s ease-in-out;
         }
-
         .blur-effect { filter: blur(15px); opacity: 0.2; }
         @keyframes screenBounce {
             0% { transform: scale(0.3); opacity: 0; filter: brightness(1.5); }
@@ -184,10 +183,10 @@
             100% { transform: translateY(-12px) rotate(6deg) scale(1.04); }
         }
 
-        /* SPECYFICZNE USTAWIENIA MOBILNE (DOPASOWANIE KARTY) */
         @media (max-width: 480px) {
             .card {
-                padding: 20px 14px; 
+                padding: 20px 14px; /* Kompaktowy padding na mniejszych ekranach */
+                max-height: 92vh; /* Dodatkowa przestrzeń w pionie */
             }
             h1 { font-size: 23px; margin-bottom: 14px; }
             .menu-grid { gap: 10px; margin-top: 6px; }
@@ -389,14 +388,75 @@
         .btn-split-lang:active { transform: scale(0.95); }
         .status-msg { color: #8ecae6; font-size: 13px; margin-bottom: 3px; font-style: italic; }
         .status-msg button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
+    
+        /* ============================================================
+           MOBILE / PWA ONLY — DOLNA KRAWĘDŹ
+           Nie zmieniamy animacji, czołówki ani layoutu PC.
+           ============================================================ */
+        @media (max-width: 767px) {
+            html {
+                height: 100%;
+                min-height: 100%;
+                overflow: hidden;
+                background: #020611;
+                --safe-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            /*
+             * Najważniejsza zmiana: na PWA nie przypinamy BODY do
+             * top:0/bottom:0. To właśnie potrafi odciąć web-content
+             * przed dolnym safe-area na telefonie.
+             */
+            body {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                right: auto !important;
+                bottom: auto !important;
+                width: 100%;
+                height: 100%;
+                min-height: 100%;
+                overflow: hidden;
+                background: transparent !important;
+            }
+
+            /*
+             * Osobna warstwa tła schodzi pod dolny obszar PWA.
+             * Nie dotykamy body layoutu, więc karta/czołówka zostają
+             * dokładnie w swoim miejscu.
+             */
+            body::before {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: calc(-1 * max(env(safe-area-inset-bottom, 0px), 48px)) !important;
+                width: 100% !important;
+                height: auto !important;
+                z-index: -2 !important;
+                background: radial-gradient(circle at center, #0a192f 0%, #020611 100%) !important;
+                pointer-events: none !important;
+            }
+
+            /*
+             * Canvas zostaje na swoim normalnym układzie współrzędnych.
+             * Tylko jego CSS-owa powierzchnia obejmuje dodatkowy dół.
+             */
+            #fxCanvas {
+                position: fixed !important;
+                top: -50px !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: calc(100vh + 150px + max(env(safe-area-inset-bottom, 0px), 48px)) !important;
+                pointer-events: none !important;
+                z-index: -1 !important;
+            }
+        }
     </style>
 </head>
 <body>
 
-<!-- Rozciągnięty kontener tła likwidujący obcięcie dolne -->
-<div id="bg-wrapper">
-    <canvas id="fxCanvas"></canvas>
-</div>
+<canvas id="fxCanvas"></canvas>
 
 <button id="homeBtn" class="home-btn" onclick="goToMenu()" title="Powrót do menu" style="display: none;">
     <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -520,13 +580,14 @@
     let clickAudioContext = null;
     let uiAudioCtx = null;
 
-    // Blokada zoomu i przesuwania na iOS (twarde jak skała)
-    document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+    // Blokada zoomu i przesuwania na iOS
+    document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+    });
     document.addEventListener('touchmove', function (e) {
-        if (e.touches.length > 1) { e.preventDefault(); }
-    }, { passive: false });
-    window.addEventListener('scroll', function(e) {
-        window.scrollTo(0, 0);
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
     }, { passive: false });
 
     function playClickSound() {
@@ -548,7 +609,9 @@
             gain.connect(clickAudioContext.destination);
             osc.start(now);
             osc.stop(now + 0.1);
-        } catch (e) {}
+        } catch (e) {
+            console.log('Dźwięk kliknięcia niedostępny:', e);
+        }
     }
 
     function initUiAudio() {
@@ -610,16 +673,26 @@
     window.addEventListener('orientationchange', resizeCanvas);
 
     function resizeCanvas() {
-        // Zczytujemy wielkość ze sztucznego, powiększonego kontenera tła,
-        // przez co canvas jest fizycznie większy niż ekran w dół i w górę
-        const wrapper = document.getElementById('bg-wrapper');
-        if(wrapper) {
-            canvas.width = wrapper.clientWidth;
-            canvas.height = wrapper.clientHeight;
-        } else {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        const isMobile = window.matchMedia('(max-width: 767px)').matches;
+
+        if (isMobile) {
+            /*
+             * Bitmap pozostaje zgodny z oryginalnymi współrzędnymi animacji.
+             * Dodatkowy dół robi CSS, a nie sztuczne powiększanie bitmapy.
+             */
+            const w = window.innerWidth || document.documentElement.clientWidth || 0;
+            const h = window.innerHeight || document.documentElement.clientHeight || 0;
+            const safeBottom = Math.max(48, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 0);
+            canvas.width = Math.ceil(w);
+            canvas.height = Math.ceil(h + 150 + safeBottom);
+            return;
         }
+
+        /* PC — oryginalne zachowanie bez zmian. */
+        const w = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0, screen.width || 0);
+        const h = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0, screen.height || 0);
+        canvas.width = w;
+        canvas.height = h + 150;
     }
 
     let particles = [];
@@ -648,7 +721,7 @@
         const notesSymbols = ['♪', '♫', '♬', '♩'];
         musicNotes.push({
             x: Math.random() * canvas.width,
-            y: canvas.height - 20, // Canvas ma nadmiarowe 100px u dołu, więc startuje mocno pod wyświetlaczem!
+            y: canvas.height + 20, // Start z ukrytej, przedłużonej na dole strefy
             vy: Math.random() * 2.5 + 1.8,
             vx: (Math.random() - 0.5) * 2,
             alpha: 1,
@@ -684,7 +757,7 @@
             ctx.shadowColor = '#ffb703'; ctx.shadowBlur = 15;
             ctx.fillText(n.symbol, n.x, n.y);
             ctx.restore();
-            if (n.y < -100 || n.alpha <= 0) musicNotes.splice(index, 1);
+            if (n.y < -60 || n.alpha <= 0) musicNotes.splice(index, 1);
         });
 
         particles.forEach((p, index) => {
@@ -788,7 +861,7 @@
     }
 
     // =========================================================================
-    // 1. BAZA WHITELIST
+    // 1. BAZA WHITELIST (29 ZWERYFIKOWANYCH UTWORÓW - LOKALNE PLIKI MP3)
     // =========================================================================
     const whiteListSongPool = [
         { category: "Elżbieta Wojnowska", query: "Mały szary człowiek", title: "Mały szary człowiek - Elżbieta Wojnowska", audioSource: "audio/Elżbieta Wojnowska - Maly, szary czlowiek.mp3", startSec: 30 },
@@ -1913,7 +1986,9 @@
                 osc.connect(gain); gain.connect(ctx.destination);
                 osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.35);
             });
-        } catch (e) {}
+        } catch (e) {
+            console.log("Audio niedostępne", e);
+        }
     }
 
     function resetFullPreviewState() {
@@ -2087,8 +2162,11 @@
         });
     }
 
+    // =========================================================================
+    // ODTWARZANIE AUDIO - PEŁNE WSPARCIE DLA TELEFONÓW / SAFARI / CHROME
+    // =========================================================================
     const ITUNES_CACHE_KEY = 'kindziu_itunes_preview_cache_v3';
-    const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14; 
+    const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14; // 14 dni
     let audioRequestId = 0;
 
     function readItunesCache() {
@@ -2128,33 +2206,47 @@
     function itunesJsonp(term, country = null, timeoutMs = 10000) {
         return new Promise((resolve, reject) => {
             const callbackName = 'itunes_cb_' + Math.random().toString(36).substring(2, 10);
-            let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=15&callback=${callbackName}&_t=${Date.now()}`;
+            let url =
+                `https://itunes.apple.com/search?term=${encodeURIComponent(term)}` +
+                `&entity=song&limit=15&callback=${callbackName}&_t=${Date.now()}`;
+
             if (country) url += `&country=${country}`;
+
             const script = document.createElement('script');
             script.src = url;
+
             const timeout = setTimeout(() => {
                 cleanup();
                 reject(new Error("TIMEOUT_ITUNES"));
             }, timeoutMs);
+
             function cleanup() {
                 if (window[callbackName]) delete window[callbackName];
                 if (script.parentNode) script.parentNode.removeChild(script);
                 clearTimeout(timeout);
             }
+
             window[callbackName] = function(data) {
                 cleanup();
                 resolve(data);
             };
+
             script.onerror = function() {
                 cleanup();
                 reject(new Error("ITUNES_NETWORK_ERROR"));
             };
+
             document.body.appendChild(script);
         });
     }
 
     function cleanAppleText(str) {
-        return String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l").replace(/Ł/g, "L").toLowerCase();
+        return String(str || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/ł/g, "l")
+            .replace(/Ł/g, "L")
+            .toLowerCase();
     }
 
     function appleCleanString(str) {
@@ -2166,8 +2258,10 @@
         const s2 = appleCleanString(b);
         if (!s1 || !s2) return 0;
         if (s1.includes(s2) || s2.includes(s1)) return 0.9;
+
         const words1 = cleanAppleText(a).split(/\s+/).filter(w => w.length > 2);
         const words2 = cleanAppleText(b).split(/\s+/).filter(w => w.length > 2);
+
         let matches = 0;
         words1.forEach(w => {
             if (words2.some(w2 => w2.includes(w) || w.includes(w2))) matches++;
@@ -2177,17 +2271,22 @@
 
     function appleArtistValid(appleArtist, expectedArtist) {
         if (!appleArtist || !expectedArtist) return false;
+
         const a = cleanAppleText(appleArtist);
         const e = cleanAppleText(expectedArtist);
         const words = e.split(/\s+/).filter(w => w.length > 2);
+
         return words.some(w => a.includes(w));
     }
 
     async function fetchItunesResults(song) {
         const query = `${song.category} ${song.query}`;
+
         let data = await itunesJsonp(query, "PL", 10000);
         if (data && Array.isArray(data.results) && data.results.length) return data.results;
+
         await new Promise(r => setTimeout(r, 300));
+
         data = await itunesJsonp(query, null, 10000);
         return (data && Array.isArray(data.results)) ? data.results : [];
     }
@@ -2195,7 +2294,9 @@
     async function resolveItunesPreview(song) {
         const cached = getCachedPreview(song);
         if (cached) return cached;
+
         let results = [];
+
         try {
             results = await fetchItunesResults(song);
         } catch (firstError) {
@@ -2209,18 +2310,33 @@
                 }
             }
         }
+
         const withPreview = (results || []).filter(r => r && r.previewUrl);
-        if (!withPreview.length) { throw new Error("ITUNES_NO_PREVIEW"); }
-        let best = withPreview.find(r =>
-            appleArtistValid(r.artistName, song.category) && appleSimilarity(r.trackName, song.query) >= 0.40
-        );
-        if (!best) {
-            best = withPreview.map(r => ({
-                r,
-                score: appleSimilarity(r.trackName, song.query) * 70 + (appleArtistValid(r.artistName, song.category) ? 50 : 0)
-            })).sort((a, b) => b.score - a.score)[0]?.r;
+
+        if (!withPreview.length) {
+            throw new Error("ITUNES_NO_PREVIEW");
         }
-        if (!best || !best.previewUrl) { throw new Error("ITUNES_NO_MATCH"); }
+
+        let best = withPreview.find(r =>
+            appleArtistValid(r.artistName, song.category) &&
+            appleSimilarity(r.trackName, song.query) >= 0.40
+        );
+
+        if (!best) {
+            best = withPreview
+                .map(r => ({
+                    r,
+                    score:
+                        appleSimilarity(r.trackName, song.query) * 70 +
+                        (appleArtistValid(r.artistName, song.category) ? 50 : 0)
+                }))
+                .sort((a, b) => b.score - a.score)[0]?.r;
+        }
+
+        if (!best || !best.previewUrl) {
+            throw new Error("ITUNES_NO_MATCH");
+        }
+
         saveCachedPreview(song, best.previewUrl);
         return best.previewUrl;
     }
@@ -2232,36 +2348,47 @@
     function startRoundTimer() {
         statusMsg.innerText = "Graj!";
         stopBtn.disabled = false;
+
         clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             elapsedSeconds++;
-            finalAmount = (isReviewMode || currentRound === 1) ? (100 + elapsedSeconds * 10) : (200 - elapsedSeconds * 10);
+            finalAmount = (isReviewMode || currentRound === 1)
+                ? (100 + elapsedSeconds * 10)
+                : (200 - elapsedSeconds * 10);
+
             moneyDisplay.innerText = finalAmount;
+
             const progressPercent = (elapsedSeconds / 10) * 100;
             progressBar.style.width = Math.min(progressPercent, 100) + "%";
+
             if (elapsedSeconds >= 10) stopMusic(true);
         }, 1000);
     }
 
     async function playResolvedAudio(srcUrl, startOffset = 0) {
         currentPreviewUrl = srcUrl;
+
         audio.pause();
         audio.removeAttribute('src');
         audio.src = srcUrl;
         audio.load();
+
         await new Promise((resolve, reject) => {
             let settled = false;
+
             const cleanup = () => {
                 audio.removeEventListener('loadedmetadata', onMeta);
                 audio.removeEventListener('canplay', onCanPlay);
                 audio.removeEventListener('error', onError);
             };
+
             const done = () => {
                 if (settled) return;
                 settled = true;
                 cleanup();
                 resolve();
             };
+
             const onMeta = () => done();
             const onCanPlay = () => done();
             const onError = () => {
@@ -2270,14 +2397,18 @@
                 cleanup();
                 reject(new Error('AUDIO_LOAD_ERROR'));
             };
+
             audio.addEventListener('loadedmetadata', onMeta, { once: true });
             audio.addEventListener('canplay', onCanPlay, { once: true });
             audio.addEventListener('error', onError, { once: true });
+
             if (audio.readyState >= 1) done();
         });
+
         try {
             audio.currentTime = Math.max(0, Number(startOffset) || 0);
         } catch (_) {}
+
         await audio.play();
         startRoundTimer();
         return true;
@@ -2294,32 +2425,73 @@
 
     async function startSong(song, isRetry = false) {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
         resetFullPreviewState();
         selectedSong = song;
+
         document.getElementById('categoryScreen').style.display = 'none';
         document.getElementById('gameScreen').style.display = 'block';
         document.getElementById('currentCategory').innerText = song.category;
         homeBtn.style.display = 'flex';
+
         answerBox.style.display = 'none';
         revealBtn.style.display = 'none';
         stopBtn.disabled = true;
         progressBar.style.width = "0%";
+
         elapsedSeconds = 0;
         finalAmount = (isReviewMode || currentRound === 1) ? 100 : 200;
         moneyDisplay.innerText = finalAmount;
+
         const requestId = ++audioRequestId;
-        statusMsg.innerText = song.audioSource ? "Ładowanie pliku MP3..." : "Wyszukiwanie próbki w iTunes...";
+        statusMsg.innerText = song.audioSource
+            ? "Ładowanie pliku MP3..."
+            : "Wyszukiwanie próbki w iTunes...";
+
         try {
             let srcUrl = song.audioSource || null;
-            if (!srcUrl) { srcUrl = await resolveItunesPreview(song); }
+
+            if (!srcUrl) {
+                srcUrl = await resolveItunesPreview(song);
+            }
+
             if (requestId !== audioRequestId || selectedSong !== song) return;
+
             await playResolvedAudio(srcUrl, song.startSec || 0);
         } catch (err) {
             console.error("Błąd audio:", err);
             stopBtn.disabled = true;
             clearInterval(timerInterval);
-            setAudioStatusError(song.audioSource ? "Nie udało się załadować lokalnego pliku MP3." : "Nie udało się odtworzyć próbki audio z iTunes.");
+
+            setAudioStatusError(
+                song.audioSource
+                    ? "Nie udało się załadować lokalnego pliku MP3."
+                    : "Nie udało się odtworzyć próbki audio z iTunes."
+            );
         }
+    }
+
+    const stopReactionSounds = [
+        'stop-reakcja-1.mp3', 'stop-reakcja-2.mp3', 'stop-reakcja-3.mp3', 'stop-reakcja-4.mp3',
+        'stop-reakcja-5.mp3', 'stop-reakcja-6.mp3', 'stop-reakcja-7.mp3', 'stop-reakcja-8.mp3',
+        'stop-reakcja-9.mp3', 'stop-reakcja-10.mp3', 'stop-reakcja-11.mp3', 'stop-reakcja-12.mp3'
+    ];
+
+    let recentReactionIndices = [];
+
+    function playRandomStopReaction() {
+        const stopReactionAudio = document.getElementById('stopReactionAudio');
+        let randomIndex;
+        do {
+            randomIndex = Math.floor(Math.random() * stopReactionSounds.length);
+        } while (recentReactionIndices.includes(randomIndex));
+
+        recentReactionIndices.push(randomIndex);
+        if (recentReactionIndices.length > 3) recentReactionIndices.shift();
+
+        stopReactionAudio.src = stopReactionSounds[randomIndex];
+        stopReactionAudio.currentTime = 0;
+        stopReactionAudio.play().catch(e => console.log('Błąd audio reakcji:', e));
     }
 
     function stopMusic(timeOut = false) {
@@ -2327,6 +2499,7 @@
         clearInterval(timerInterval);
         stopBtn.disabled = true;
         revealBtn.style.display = 'block';
+
         if (timeOut) {
             statusMsg.innerText = "Czas minął!";
             document.getElementById('resultText').innerText = "Brak reakcji w 10 sekund. Zdobyto: 0 zł";
@@ -2335,7 +2508,10 @@
             statusMsg.innerText = "Zatrzymano!";
             document.getElementById('resultText').innerText = "Do Twojego konta trafia: " + finalAmount + " zł";
             totalSessionMoney += finalAmount;
-            setTimeout(() => { playRandomStopReaction(); }, 500);
+
+            setTimeout(() => {
+                playRandomStopReaction();
+            }, 500);
         }
     }
 
@@ -2361,15 +2537,19 @@
         document.getElementById('answerText').innerText = selectedSong.title;
         document.getElementById('mainSpeakerBtn').style.display = 'block';
         document.getElementById('splitSpeakerContainer').style.display = 'none';
+
         let labelYes = isReviewMode ? "Już znam" : "Znałam";
         let labelNo = isReviewMode ? "Nie znałam" : "Nie znałam";
+
         let feedbackHtml = `
             <button class="feedback-btn" onclick="handleFeedback(true)" style="background: #2ecc71;">✅ ${labelYes}</button>
             <button class="feedback-btn" onclick="handleFeedback(false)" style="background: #e74c3c;">❌ ${labelNo}</button>
         `;
+        
         let existingFeedback = document.getElementById('feedbackBtns');
         existingFeedback.innerHTML = feedbackHtml;
         existingFeedback.style.display = 'flex';
+
         answerBox.style.display = 'block';
         revealBtn.style.display = 'none';
         if (!playedIds.includes(selectedSong.id)) playedIds.push(selectedSong.id);
@@ -2378,18 +2558,25 @@
     function toggleFullPreview() {
         const btn = document.getElementById('listenFullBtn');
         if (!currentPreviewUrl || !selectedSong) return;
+
         if (!isFullPlaying) {
             audio.pause();
             audio.src = currentPreviewUrl;
             audio.load();
-            const startOffset = (selectedSong && selectedSong.startSec) ? selectedSong.startSec : 0;
+
+            const startOffset = (selectedSong && selectedSong.startSec)
+                ? selectedSong.startSec
+                : 0;
+
             const executeFullPlay = async () => {
                 try {
                     audio.currentTime = startOffset;
                     await audio.play();
+
                     isFullPlaying = true;
                     btn.innerText = "⏹ Zatrzymaj odsłuch (30s)";
                     btn.style.background = "linear-gradient(180deg, #e74c3c 0%, #c0392b 100%)";
+
                     clearTimeout(fullPreviewTimer);
                     fullPreviewTimer = setTimeout(() => {
                         if (isFullPlaying) toggleFullPreview();
@@ -2399,6 +2586,7 @@
                     setAudioStatusError("Nie udało się rozpocząć pełnego odsłuchu próbki.");
                 }
             };
+
             if (audio.readyState >= 1) {
                 executeFullPlay();
             } else {
@@ -2421,13 +2609,20 @@
             audio.pause();
             resetFullPreviewState();
         }
+
         playFeedbackSound(isKnown);
+
         let fb = document.getElementById('feedbackBtns');
         if (fb) fb.style.display = 'none';
+
         if (isReviewMode) {
-            if (isKnown) removeReviewSong(selectedSong.query);
+            if (isKnown) {
+                removeReviewSong(selectedSong.query);
+            }
         } else {
-            if (!isKnown) addReviewSong(selectedSong);
+            if (!isKnown) {
+                addReviewSong(selectedSong);
+            }
         }
     }
 
@@ -2437,12 +2632,15 @@
             audio.pause();
             resetFullPreviewState();
         }
+
         const stopReactionAudio = document.getElementById('stopReactionAudio');
         if (stopReactionAudio) {
             stopReactionAudio.pause();
             stopReactionAudio.currentTime = 0;
         }
+
         document.getElementById('gameScreen').style.display = 'none';
+        
         if (playedIds.length >= activeCategoriesSet.length) {
             showSummaryScreen();
         } else {
