@@ -450,7 +450,7 @@
     </div>
 </div>
 
-<audio id="audioPlayer" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></audio>
+<audio id="audioPlayer" preload="auto" playsinline webkit-playsinline></audio>
 <audio id="introAudio" src="czolowka.mp3" preload="auto"></audio>
 <audio id="robertVoice" src="robert-voice.mp3" preload="auto"></audio>
 <audio id="stopReactionAudio" preload="auto"></audio>
@@ -2149,29 +2149,22 @@
             if (country) url += `&country=${country}`;
 
             const script = document.createElement('script');
-            let finished = false;
-
-            function cleanup() {
-                if (finished) return;
-                finished = true;
-                clearTimeout(timeout);
-                try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
-                if (script.parentNode) script.parentNode.removeChild(script);
-            }
+            script.src = url;
 
             const timeout = setTimeout(() => {
                 cleanup();
                 reject(new Error("TIMEOUT_ITUNES"));
             }, timeoutMs);
 
+            function cleanup() {
+                if (window[callbackName]) delete window[callbackName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+                clearTimeout(timeout);
+            }
+
             window[callbackName] = function(data) {
-                if (finished) return;
                 cleanup();
-                if (data && Array.isArray(data.results)) {
-                    resolve(data.results);
-                } else {
-                    reject(new Error("INVALID_ITUNES_RESPONSE"));
-                }
+                resolve(data);
             };
 
             script.onerror = function() {
@@ -2179,8 +2172,6 @@
                 reject(new Error("ITUNES_NETWORK_ERROR"));
             };
 
-            script.async = true;
-            script.src = url;
             document.body.appendChild(script);
         });
     }
@@ -2227,17 +2218,13 @@
     async function fetchItunesResults(song) {
         const query = `${song.category} ${song.query}`;
 
-        // IDENTYCZNIE JAK W SKANERZE:
-        // 1. Polska baza
-        // 2. Globalna baza
-        let results = await itunesJsonp(query, "PL", 15);
-
-        if (results && results.length) return results;
+        let data = await itunesJsonp(query, "PL", 10000);
+        if (data && Array.isArray(data.results) && data.results.length) return data.results;
 
         await new Promise(r => setTimeout(r, 300));
 
-        results = await itunesJsonp(query, null, 15);
-        return results || [];
+        data = await itunesJsonp(query, null, 10000);
+        return (data && Array.isArray(data.results)) ? data.results : [];
     }
 
     async function resolveItunesPreview(song) {
@@ -2295,35 +2282,6 @@
 
     // Wywoływane z bezpośredniego kliknięcia. Dzięki temu telefon dostaje
     // gest użytkownika zanim zakończy się asynchroniczne zapytanie do iTunes.
-    function unlockAudioFromUserGesture() {
-        if (audioUnlocked) return;
-
-        try {
-            audio.setAttribute('playsinline', '');
-            audio.setAttribute('webkit-playsinline', '');
-            audio.muted = true;
-            audio.src = MOBILE_SILENCE_WAV;
-
-            const promise = audio.play();
-            if (promise && typeof promise.then === 'function') {
-                promise.then(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                    audio.muted = false;
-                    audioUnlocked = true;
-                }).catch(() => {
-                    audio.muted = false;
-                });
-            } else {
-                audio.pause();
-                audio.muted = false;
-                audioUnlocked = true;
-            }
-        } catch (e) {
-            audio.muted = false;
-        }
-    }
-
     function setAudioStatusError(message) {
         statusMsg.innerText = message;
     }
