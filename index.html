@@ -523,7 +523,7 @@
             </button>
             <button id="reviewMenuBtn" class="menu-btn" onclick="startReviewMode()" style="opacity: 0.5;" disabled>
                 <div class="menu-btn-title">DO POWTÓRKI</div>
-                <div id="reviewMenuSub" class="menu-btn-sub">0/23 haseł (wymagane min. 10 haseł)</div>
+                <div id="reviewMenuSub" class="menu-btn-sub">0/29 haseł (wymagane min. 10 haseł)</div>
             </button>
         </div>
     </div>
@@ -883,7 +883,7 @@
     }
 
     // =========================================================================
-    // TYLKO ZWERYFIKOWANE UTWORY Z WHITELISTY (23 PLIKI Z FOLDERU AUDIO)
+    // PEŁNA BAZA 29 ZWERYFIKOWANYCH UTWORÓW (WHITELIST Z FOLDERU AUDIO)
     // =========================================================================
     const masterSongPool = [
         { category: "Elżbieta Wojnowska", query: "Mały szary człowiek", title: "Mały szary człowiek - Elżbieta Wojnowska", audioSource: "audio/Elżbieta Wojnowska - Maly, szary czlowiek.mp3", startSec: 30 },
@@ -908,7 +908,13 @@
         { category: "Akcent", query: "Oczarowałaś mnie", title: "Oczarowałaś mnie - Akcent", audioSource: "audio/Akcent Oczarowałas Mnie Official Video.mp3", startSec: 45 },
         { category: "Kaśka Sochacka", query: "Spokojnie", title: "Spokojnie - Kaśka Sochacka", audioSource: "audio/Kaśka Sochacka Spokojnie Official audio.mp3", startSec: 45 },
         { category: "Proletaryat", query: "Ziemi sól", title: "Ziemi sól - Proletaryat", audioSource: "audio/proletaryat ziemi sól.mp3", startSec: 18 },
-        { category: "Lady Pank", query: "Otuleni", title: "Otuleni - Lady Pank", audioSource: "audio/Lady Pank Otuleni.mp3", startSec: 85 }
+        { category: "Lady Pank", query: "Otuleni", title: "Otuleni - Lady Pank", audioSource: "audio/Lady Pank Otuleni.mp3", startSec: 85 },
+        { category: "Andrzej Piaseczny", query: "Imię deszczu", title: "Imię deszczu - Andrzej Piaseczny", audioSource: "audio/Piasek MAFIA Imię deszczu.mp3", startSec: 42 },
+        { category: "Waldemar Kazanecki", query: "Walc Barbary", title: "Walc Barbary - Waldemar Kazanecki", audioSource: "audio/Waldemar Kazanecki Walc Barbary 1975 oryginalna wersja.mp3", startSec: 45 },
+        { category: "K.A.S.A.", query: "Macho", title: "Macho - K.A.S.A.", audioSource: "audio/K.A.S.A.MACZO Oficjalny Teledysk.mp3", startSec: 47 },
+        { category: "Edyta Geppert", query: "Och, życie kocham cię nad życie", title: "Och, życie kocham cię nad życie - Edyta Geppert", audioSource: "audio/Edyta Geppert Och Zycie Kocham Cie Nad Zycie.mp3", startSec: 30 },
+        { category: "Katarzyna Groniec", query: "Szyba", title: "Szyba - Katarzyna Groniec", audioSource: "audio/Metro Katarzyna Groniec Szyba.mp3", startSec: 113 },
+        { category: "Tilt", query: "Tak jak Ja Kocham Cię", title: "Tak jak Ja Kocham Cię - Tilt", audioSource: "audio/Tilt Tak jak Ja Kocham Cię.mp3", startSec: 82 }
     ];
 
     let currentRound = 1;
