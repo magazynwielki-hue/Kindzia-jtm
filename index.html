@@ -435,12 +435,10 @@
             body::before {
                 content: '';
                 position: fixed !important;
-                top: -1000px !important;
-                left: -1000px !important;
-                right: -1000px !important;
-                bottom: calc(-1000px - env(safe-area-inset-bottom, 0px)) !important;
-                width: auto !important;
-                height: auto !important;
+                top: -2000px !important;
+                left: -2000px !important;
+                width: calc(100vw + 4000px) !important;
+                height: calc(100vh + 4000px) !important;
                 min-height: 0 !important;
                 background: radial-gradient(
                     circle at 50% 42%,
@@ -460,12 +458,10 @@
              */
             #fxCanvas {
                 position: fixed !important;
-                top: -1000px !important;
-                left: -1000px !important;
-                right: -1000px !important;
-                bottom: calc(-1000px - env(safe-area-inset-bottom, 0px)) !important;
-                width: auto !important;
-                height: auto !important;
+                top: -2000px !important;
+                left: -2000px !important;
+                width: calc(100vw + 4000px) !important;
+                height: calc(100vh + 4000px) !important;
                 min-width: 0 !important;
                 min-height: 0 !important;
                 max-width: none !important;
@@ -496,11 +492,11 @@
                 }
 
                 body::before {
-                    bottom: calc(-1200px - env(safe-area-inset-bottom, 0px)) !important;
+                    
                 }
 
                 #fxCanvas {
-                    bottom: calc(-1200px - env(safe-area-inset-bottom, 0px)) !important;
+                    
                 }
             }
 
@@ -510,10 +506,10 @@
                     overflow: visible !important;
                 }
                 body::before {
-                    bottom: calc(-1200px - env(safe-area-inset-bottom, 0px)) !important;
+                    
                 }
                 #fxCanvas {
-                    bottom: calc(-1200px - env(safe-area-inset-bottom, 0px)) !important;
+                    
                 }
             }
         }
@@ -774,9 +770,12 @@
 
             // CSS ma overscan 300 px z każdej strony. Canvas musi mieć
             // dokładnie tę samą geometrię, inaczej pojawi się odcięcie.
-            const MOBILE_OVERSCAN = 2200;
-            canvas.width = Math.ceil(viewportW + MOBILE_OVERSCAN);
-            canvas.height = Math.ceil(viewportH + MOBILE_OVERSCAN);
+            const MOBILE_OVERSCAN = 2000;
+            mobileViewportOffset = MOBILE_OVERSCAN;
+            mobileViewportW = viewportW;
+            mobileViewportH = viewportH;
+            canvas.width = Math.ceil(viewportW + MOBILE_OVERSCAN * 2);
+            canvas.height = Math.ceil(viewportH + MOBILE_OVERSCAN * 2);
             return;
         }
 
@@ -803,6 +802,9 @@
     let spotlightAngle = 0;
     let effectTimer = null;
     let fadeOutInterval = null;
+    let mobileViewportOffset = 0;
+    let mobileViewportW = 0;
+    let mobileViewportH = 0;
 
     function createFirework(x, y) {
         const colors = ['#ffb703', '#2ecc71', '#00d4ff', '#e74c3c', '#9b59b6', '#ffffff'];
@@ -823,8 +825,8 @@
     function createMusicNote() {
         const notesSymbols = ['♪', '♫', '♬', '♩'];
         musicNotes.push({
-            x: Math.random() * canvas.width,
-            y: canvas.height + 20, // Start z ukrytej, przedłużonej na dole strefy
+            x: (window.matchMedia('(max-width: 767px)').matches ? mobileViewportOffset + Math.random() * mobileViewportW : Math.random() * canvas.width),
+            y: (window.matchMedia('(max-width: 767px)').matches ? mobileViewportOffset + mobileViewportH + 20 : canvas.height + 20), // Start tuż pod widocznym ekranem na mobile strefy
             vy: Math.random() * 2.5 + 1.8,
             vx: (Math.random() - 0.5) * 2,
             alpha: 1,
@@ -852,7 +854,8 @@
 
         musicNotes.forEach((n, index) => {
             n.y -= n.vy; n.x += n.vx;
-            if (n.y < canvas.height * 0.15) n.alpha -= 0.025;
+            const fadeTop = window.matchMedia('(max-width: 767px)').matches ? mobileViewportOffset + mobileViewportH * 0.15 : canvas.height * 0.15;
+            if (n.y < fadeTop) n.alpha -= 0.025;
             ctx.save();
             ctx.globalAlpha = Math.max(n.alpha, 0);
             ctx.fillStyle = '#ffd700';
@@ -881,8 +884,9 @@
 
     function startStudioShowEffects() {
         effectTimer = setInterval(() => {
-            const rx = Math.random() * (canvas.width - 150) + 75;
-            const ry = Math.random() * (canvas.height * 0.55);
+            const isMobileNow = window.matchMedia('(max-width: 767px)').matches;
+            const rx = isMobileNow ? mobileViewportOffset + Math.random() * Math.max(1, mobileViewportW - 150) + 75 : Math.random() * (canvas.width - 150) + 75;
+            const ry = isMobileNow ? mobileViewportOffset + Math.random() * (mobileViewportH * 0.55) : Math.random() * (canvas.height * 0.55);
             createFirework(rx, ry);
             createMusicNote();
             createMusicNote();
