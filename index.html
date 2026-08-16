@@ -2010,41 +2010,6 @@
         });
     }
 
-    // Bezpieczna funkcja JSONP do pobierania danych z iTunes (działa idealnie na telefonach i omija blokady CORS/fetch)
-    function searchItunesJSONP(term, country = 'PL') {
-        return new Promise((resolve, reject) => {
-            const cbName = 'itunes_cb_' + Math.random().toString(36).substring(7);
-            const script = document.createElement('script');
-            
-            let timeout = setTimeout(() => {
-                cleanup();
-                reject(new Error('Timeout'));
-            }, 8000);
-
-            function cleanup() {
-                if (window[cbName]) delete window[cbName];
-                if (script && script.parentNode) script.parentNode.removeChild(script);
-                clearTimeout(timeout);
-            }
-
-            window[cbName] = function(data) {
-                cleanup();
-                resolve(data);
-            };
-
-            script.onerror = function() {
-                cleanup();
-                reject(new Error('Script load error'));
-            };
-
-            let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&limit=1&callback=${cbName}`;
-            if (country) url += `&country=${country}`;
-            
-            script.src = url;
-            document.body.appendChild(script);
-        });
-    }
-
     async function startSong(song) {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         resetFullPreviewState();
@@ -2113,24 +2078,30 @@
             launchPlayback(song.audioSource, song.startSec || 0);
         } else {
             statusMsg.innerText = "Pobieranie utworu z iTunes...";
-            const term = `${song.category} ${song.query}`;
+            const term = encodeURIComponent(`${song.category} ${song.query}`);
 
-            try {
-                let data = await searchItunesJSONP(term, 'PL');
-                if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
-                    launchPlayback(data.results[0].previewUrl, 0);
-                } else {
-                    let fallbackData = await searchItunesJSONP(term, '');
-                    if (fallbackData.results && fallbackData.results.length > 0 && fallbackData.results[0].previewUrl) {
-                        launchPlayback(fallbackData.results[0].previewUrl, 0);
+            fetch(`https://itunes.apple.com/search?term=${term}&country=PL&media=music&limit=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+                        launchPlayback(data.results[0].previewUrl, 0);
                     } else {
-                        statusMsg.innerText = "Błąd: Nie znaleziono utworu w iTunes.";
+                        fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`)
+                            .then(r => r.json())
+                            .then(fallbackData => {
+                                if (fallbackData.results && fallbackData.results.length > 0 && fallbackData.results[0].previewUrl) {
+                                    launchPlayback(fallbackData.results[0].previewUrl, 0);
+                                } else {
+                                    statusMsg.innerText = "Błąd: Nie znaleziono utworu w iTunes.";
+                                }
+                            })
+                            .catch(() => { statusMsg.innerText = "Błąd połączenia z iTunes API."; });
                     }
-                }
-            } catch (err) {
-                console.error("Błąd iTunes JSONP:", err);
-                statusMsg.innerText = "Błąd połączenia z iTunes API.";
-            }
+                })
+                .catch(err => {
+                    console.error("Błąd iTunes:", err);
+                    statusMsg.innerText = "Błąd połączenia z iTunes API.";
+                });
         }
     }
 
