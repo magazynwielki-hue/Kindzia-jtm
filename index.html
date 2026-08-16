@@ -745,7 +745,7 @@
     ];
 
     // =========================================================================
-    // 2. GŁÓWNA BAZA UTWORÓW ITUNES (W 100% CZYSTA I BEZ BŁĘDÓW SKŁADNIOWYCH)
+    // 2. GŁÓWNA BAZA UTWORÓW ITUNES (W 100% CZYSTA I BEZ SPOILERÓW)
     // =========================================================================
     const itunesSongPool = [
         { category: "Calvin Harris & Disciples", query: "How Deep Is Your Love", title: "How Deep Is Your Love - Calvin Harris, Disciples" },
@@ -2077,10 +2077,8 @@
             statusMsg.innerText = "Ładowanie pliku MP3...";
             launchPlayback(song.audioSource, song.startSec || 0);
         } else {
-            // POBIERANIE PRÓBKI AUDIO Z POLSKIEGO ITUNES API Z FALLBACKIEM GLOBALNYM
             statusMsg.innerText = "Pobieranie utworu z iTunes...";
-            const cleanTerm = song.title ? song.title.replace(' - ', ' ') : `${song.category} ${song.query}`;
-            const term = encodeURIComponent(cleanTerm);
+            const term = encodeURIComponent(`${song.category} ${song.query}`);
 
             fetch(`https://itunes.apple.com/search?term=${term}&country=PL&media=music&limit=1`)
                 .then(res => res.json())
@@ -2088,7 +2086,6 @@
                     if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
                         launchPlayback(data.results[0].previewUrl, 0);
                     } else {
-                        // Zapytanie awaryjne do sklepu globalnego
                         fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`)
                             .then(r => r.json())
                             .then(fallbackData => {
@@ -2098,10 +2095,7 @@
                                     statusMsg.innerText = "Błąd: Nie znaleziono utworu w iTunes.";
                                 }
                             })
-                            .catch(err => {
-                                console.error("Błąd fallback iTunes:", err);
-                                statusMsg.innerText = "Błąd połączenia z iTunes API.";
-                            });
+                            .catch(() => { statusMsg.innerText = "Błąd połączenia z iTunes API."; });
                     }
                 })
                 .catch(err => {
