@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- TAGI PEŁNEGO EKRANU I PRZEZROCZYSTEGO PASKA DLA IOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#020611" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#020611">
+    
+    <title>Kindziu jaka to melodia?</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            touch-action: manipulation;
+        }
+
+        /* KLUCZOWE DLA IOS: ciemne tło bazy zapobiega białemu paskowi statusu */
+        html {
+            background-color: #020611;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
+            background-color: #020611;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding-top: max(15px, env(safe-area-inset-top));
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
+            padding-left: max(15px, env(safe-area-inset-left));
+            padding-right: max(15px, env(safe-area-inset-right));
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        /* TŁO KANWASY NA REFLEKTORY, NUTKI I FAJERWERKI */
+        #fxCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* MOBILNY PRZYCISK POWROTU DO MENU (DOMEK) */
+        .home-btn {
+            position: fixed;
+            top: max(15px, env(safe-area-inset-top));
+            left: max(15px, env(safe-area-inset-left));
+            z-index: 99999;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 183, 3, 0.5);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .home-btn:active {
+            transform: scale(0.88);
+            background: rgba(220, 38, 38, 0.85);
+            border-color: #ff4d4d;
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 30px 20px;
+            border-radius: 24px;
+            box-shadow: 0 0 50px rgba(0, 180, 216, 0.3);
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            position: relative;
+            z-index: 10;
+            transition: filter 0.8s ease-in-out, opacity 0.8s ease-in-out, transform 0.6s ease-in-out;
+        }
+
+        .blur-effect {
+            filter: blur(15px);
+            opacity: 0.2;
+        }
+
+        /* POTĘŻNY, SPRĘŻYSTY BOUNCE NA START */
+        @keyframes screenBounce {
+            0% { transform: scale(0.3); opacity: 0; filter: brightness(1.5); }
+            50% { transform: scale(1.12); opacity: 1; filter: brightness(1.2); }
+            70% { transform: scale(0.95); }
+            85% { transform: scale(1.03); }
+            100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+        }
+
+        .punch-effect {
+            animation: screenBounce 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards !important;
+        }
+
+        h1 {
+            color: #ffb703;
+            font-size: 26px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(255, 183, 3, 0.6);
+            letter-spacing: 1px;
+        }
+
+        #startScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        .btn-big-green {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: #fff;
+            border: 3px solid #2ecc71;
+            padding: 22px 40px;
+            font-size: 24px;
+            font-weight: 900;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(46, 204, 113, 0.6);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-big-green:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(46, 204, 113, 0.9);
+        }
+
+        .btn-big-green:active {
+            transform: scale(0.95);
+        }
+
+        /* EKRAN INTRO Z ROBERTEM I CHMURKĄ */
+        #introScreen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+        }
+
+        .robert-speech-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .speech-bubble-wrapper {
+            position: absolute;
+            top: -35px;
+            left: 135px;
+            width: 250px;
+            z-index: 20;
+            opacity: 0;
+            transform: scale(0.3);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .speech-bubble-wrapper.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .speech-text {
+            position: absolute;
+            top: 12px;
+            left: 18px;
+            right: 15px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #0f172a;
+            font-weight: 900;
+            font-size: 13px;
+            line-height: 1.2;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        .dancing-robert {
+            width: 180px;
+            height: 230px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.7));
+            animation: funnyDance 0.6s infinite alternate ease-in-out;
+        }
+
+        @keyframes funnyDance {
+            0% { transform: translateY(0) rotate(-6deg) scale(1); }
+            100% { transform: translateY(-12px) rotate(6deg) scale(1.04); }
+        }
+
+        /* RESPONSYWNOŚĆ DLA TELEFONÓW */
+        @media (max-width: 480px) {
+            .robert-speech-container {
+                transform: translateX(-18%); 
+            }
+            .dancing-robert {
+                width: 140px; 
+                height: 180px;
+            }
+            .speech-bubble-wrapper {
+                width: 240px; 
+                left: 75px;   
+                top: -30px;
+            }
+            .speech-text {
+                font-size: 13.5px; 
+                line-height: 1.2;
+                left: 18px;
+                right: 18px; 
+                top: 10px;
+                height: 80px;
+            }
+        }
+
+        .menu-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+
+        .menu-btn {
+            background: linear-gradient(135deg, rgba(0, 119, 182, 0.6), rgba(0, 180, 216, 0.4));
+            border: 2px solid #00d4ff;
+            border-radius: 14px;
+            padding: 18px 15px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 0 15px rgba(0, 180, 216, 0.2);
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .menu-btn-title { font-size: 20px; font-weight: 800; color: #ffffff; margin-bottom: 4px; }
+        .menu-btn-sub { font-size: 12px; color: #8ecae6; }
+
+        .categories-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+
+        .cat-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .cat-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .cat-btn.played { 
+            opacity: 0.3 !important; 
+            cursor: not-allowed; 
+            text-decoration: line-through; 
+        }
+
+        .animate-in {
+            opacity: 0;
+            animation: slideDownIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes slideDownIn {
+            0% { opacity: 0; transform: translateY(-30px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .money-wrapper { margin: 15px 0; display: flex; justify-content: center; }
+
+        .money-card {
+            position: relative;
+            background: radial-gradient(circle at center, #231238 0%, #0c0617 100%);
+            border: 2px solid #5de2ff;
+            border-radius: 12px;
+            padding: 10px 32px;
+            box-shadow: 0 0 20px rgba(93, 226, 255, 0.5), inset 0 0 15px rgba(93, 226, 255, 0.2);
+            display: inline-block;
+            min-width: 140px;
+        }
+
+        .money-number {
+            font-size: 42px;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 20px #5de2ff;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .card-stack-icon {
+            position: absolute;
+            right: -12px;
+            bottom: -6px;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #1d82db, #004fb0);
+            border: 2px solid #90caf9;
+            border-radius: 5px;
+            transform: rotate(18deg);
+            box-shadow: -3px -3px 0 #1565c0, -6px -6px 0 #0d47a1;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #ffb703);
+            transition: width 1s linear;
+        }
+
+        .category-pill {
+            background: linear-gradient(180deg, #1d82db 0%, #004fb0 100%);
+            border: 2px solid #64b5f6;
+            border-radius: 50px;
+            padding: 10px 22px;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 20px rgba(29, 130, 219, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+            letter-spacing: 1.5px;
+            margin: 10px 0 15px 0;
+            word-break: break-word;
+        }
+
+        .btn-stop {
+            background: linear-gradient(180deg, #ff4d4d 0%, #cc0000 100%);
+            color: #fff;
+            border: 2px solid #ff8080;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: 900;
+            border-radius: 12px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(204, 0, 0, 0.5);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-stop:disabled { background: #444; border-color: #666; box-shadow: none; cursor: not-allowed; color: #888; }
+
+        .btn-reload {
+            background: rgba(0, 212, 255, 0.15); color: #00d4ff; border: 1px solid #00d4ff;
+            padding: 12px; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: transform 0.15s ease, background 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-reload:active {
+            transform: scale(0.96);
+            background: rgba(0, 212, 255, 0.3);
+        }
+
+        .reload-icon {
+            display: inline-block;
+        }
+
+        .spin-anim {
+            animation: spin 0.4s ease-in-out;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .answer-box {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px; border-radius: 12px; margin-top: 12px; display: none;
+        }
+
+        .answer-title { font-size: 18px; font-weight: bold; color: #ffb703; margin-top: 3px; }
+
+        .btn-action {
+            background: linear-gradient(180deg, #2a9d8f 0%, #1d7066 100%); color: #fff;
+            border: none; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; margin-top: 8px; width: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .feedback-container {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .feedback-btn {
+            flex: 1;
+            padding: 11px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            color: white;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .speaker-wrapper { width: 100%; margin-top: 10px; }
+        .btn-speaker-main {
+            width: 100%;
+            background: linear-gradient(180deg, #8e44ad 0%, #6c5ce7 100%);
+            color: #ffffff;
+            border: none;
+            padding: 11px 15px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+            transition: transform 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-speaker-main:active { transform: scale(0.96); }
+
+        .btn-speaker-split {
+            display: none;
+            flex-direction: row;
+            gap: 10px;
+            width: 100%;
+        }
+        .btn-split-lang {
+            flex: 1;
+            padding: 11px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #ffffff;
+            transition: transform 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-lang-pol { background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
+        .btn-lang-ang { background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-split-lang:active { transform: scale(0.95); }
+
+        .status-msg { color: #8ecae6; font-size: 13px; margin-bottom: 3px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<!-- KANWA TŁA DLA EFEKTÓW CZOŁÓWKI -->
+<canvas id="fxCanvas"></canvas>
+
+<!-- PRZYCISK DOMEK -->
+<button id="homeBtn" class="home-btn" onclick="goToMenu()" title="Powrót do menu" style="display: none;">
+    <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+</button>
+
+<div class="card" id="mainCard">
+    <h1>Jaka to Melodia?</h1>
+
+    <!-- 1. START -->
+    <div id="startScreen">
+        <button class="btn-big-green" onclick="startShow()">▶ ZACZYNAMY!</button>
+    </div>
+
+    <!-- 2. INTRO Z ROBERTEM -->
+    <div id="introScreen" style="display: none;">
+        <div class="robert-speech-container">
+            <div id="speechBubbleWrapper" class="speech-bubble-wrapper">
+                <svg viewBox="0 0 320 150" width="100%" height="100%" style="filter: drop-shadow(0 6px 14px rgba(0,0,0,0.4));">
+                    <path d="M 55,35 C 35,12  80,8  110,22 C 150,8  250,12  265,38 C 295,52  295,110  265,125 C 245,140  135,140  110,125 C 85,135  40,120  50,95 C 32,80  38,48  55,35 Z M 60,102 L 22,132 L 72,118 Z" fill="#ffffff" stroke="#0f172a" stroke-width="5" stroke-linejoin="round" />
+                </svg>
+                <div id="speechText" class="speech-text"></div>
+            </div>
+            <img src="robert.png" alt="Robert Janowski" class="dancing-robert">
+        </div>
+    </div>
+
+    <!-- 3. MENU -->
+    <div id="mainMenuScreen" style="display: none;">
+        <p style="color: #aaa; margin-bottom: 20px; font-size: 16px;">Wybierz co chcesz trenować:</p>
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="selectRound(1)">
+                <div class="menu-btn-title">RUNDA 1</div>
+                <div class="menu-btn-sub">Rosnąca stawka (100 zł ➔ 200 zł) • 5 haseł</div>
+            </button>
+            <button class="menu-btn" onclick="selectRound(2)">
+                <div class="menu-btn-title">RUNDA 2</div>
+                <div class="menu-btn-sub">Malejąca stawka (200 zł ➔ 100 zł) • 3 hasła</div>
+            </button>
+            <button id="reviewMenuBtn" class="menu-btn" onclick="startReviewMode()" style="opacity: 0.5;" disabled>
+                <div class="menu-btn-title">DO POWTÓRKI</div>
+                <div id="reviewMenuSub" class="menu-btn-sub">0/949 haseł (wymagane min. 10 haseł)</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. KATEGORIE -->
+    <div id="categoryScreen" style="display: none;">
+        <p id="roundInfo" style="color: #aaa; margin-bottom: 15px; font-size: 15px;"></p>
+        <button id="reloadBtn" class="btn-reload" onclick="drawNewSet()">
+            <span id="reloadIcon" class="reload-icon">🔄</span> Wylosuj nowe hasła
+        </button>
+        <div id="categoriesList" class="categories-grid"></div>
+    </div>
+
+    <!-- 5. GRA -->
+    <div id="gameScreen" style="display: none;">
+        <div id="statusMsg" class="status-msg">Ładowanie utworu...</div>
+        
+        <div class="money-wrapper">
+            <div class="money-card">
+                <span id="moneyDisplay" class="money-number">100</span>
+                <div class="card-stack-icon"></div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div id="currentCategory" class="category-pill">---</div>
+
+        <button id="stopBtn" class="btn-stop" onclick="stopMusic()" disabled>⛔ STOP!</button>
+
+        <button id="revealBtn" class="btn-action" style="display: none;" onclick="revealAnswer()">👁 Sprawdź odpowiedź</button>
+
+        <div id="answerBox" class="answer-box">
+            <div style="color: #aaa; font-size: 14px;">Tytuł utworu:</div>
+            <div id="answerText" class="answer-title"></div>
+            <div id="resultText" style="margin-top: 10px; font-size: 15px; color: #8ecae6;"></div>
+
+            <!-- INTERAKTYWNY PRZYCISK LEKTORA (POL / ANG) -->
+            <div class="speaker-wrapper">
+                <button id="mainSpeakerBtn" class="btn-speaker-main" onclick="showSplitButtons()">
+                    🔊 Przeczytaj tytuł
+                </button>
+                <div id="splitSpeakerContainer" class="btn-speaker-split">
+                    <button class="btn-split-lang btn-lang-pol" onclick="speakWithLang('pl-PL')">🇵🇱 POL</button>
+                    <button class="btn-split-lang btn-lang-ang" onclick="speakWithLang('en-US')">🇬🇧 ANG</button>
+                </div>
+            </div>
+            
+            <!-- PRZYCISK ODSŁUCHU CAŁOŚCI -->
+            <div id="previewAudioSection" style="margin-top: 8px;">
+                <button id="listenFullBtn" class="btn-action" style="background: linear-gradient(180deg, #3a86ff 0%, #2563eb 100%);" onclick="toggleFullPreview()">🎧 Posłuchaj całości</button>
+            </div>
+
+            <!-- PRZYCISKI OCENY OBOK SIEBIE -->
+            <div id="feedbackBtns" class="feedback-container"></div>
+
+            <button class="btn-action" style="background: linear-gradient(180deg, #ffb703 0%, #fb8500 100%); color: #000;" onclick="backToCategories()">Następne hasło ➔</button>
+        </div>
+    </div>
+
+    <!-- 6. PODSUMOWANIE -->
+    <div id="summaryScreen" style="display: none;">
+        <h2 style="color: #ffb703; margin-bottom: 10px;">Koniec Rundy! 🏆</h2>
+        <p style="color: #8ecae6; font-size: 16px; margin-bottom: 15px;">Brawo Kindziu! Oto Twój wynik finansowy:</p>
+        
+        <div class="money-wrapper">
+            <div class="money-card">
+                <span id="totalMoneyDisplay" class="money-number">0</span>
+                <div class="card-stack-icon"></div>
+            </div>
+        </div>
+        <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Złotych na Twoim koncie!</p>
+
+        <button class="btn-action" onclick="showMainMenu()">🏠 Wróć do Menu Głównego</button>
+    </div>
+</div>
+
+<audio id="audioPlayer" preload="auto"></audio>
+<audio id="introAudio" src="czolowka.mp3" preload="auto"></audio>
+<audio id="robertVoice" src="robert-voice.mp3" preload="auto"></audio>
+<audio id="stopReactionAudio" preload="auto"></audio>
+
+<script>
+    let clickAudioContext = null;
+    let uiAudioCtx = null;
+
+    function playClickSound() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            if (!clickAudioContext) clickAudioContext = new AudioCtx();
+            if (clickAudioContext.state === 'suspended') clickAudioContext.resume();
+            const now = clickAudioContext.currentTime;
+            const osc = clickAudioContext.createOscillator();
+            const gain = clickAudioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(520, now);
+            osc.frequency.exponentialRampToValueAtTime(760, now + 0.07);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.12, now + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+            osc.connect(gain);
+            gain.connect(clickAudioContext.destination);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } catch (e) {
+            console.log('Dźwięk kliknięcia niedostępny:', e);
+        }
+    }
+
+    function initUiAudio() {
+        if (!uiAudioCtx) {
+            uiAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (uiAudioCtx.state === 'suspended') {
+            uiAudioCtx.resume();
+        }
+    }
+
+    function playShuffleSound() {
+        initUiAudio();
+        const osc = uiAudioCtx.createOscillator();
+        const gain = uiAudioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400, uiAudioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, uiAudioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0, uiAudioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, uiAudioCtx.currentTime + 0.05);
+        gain.gain.linearRampToValueAtTime(0, uiAudioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(uiAudioCtx.destination);
+        osc.start();
+        osc.stop(uiAudioCtx.currentTime + 0.15);
+    }
+
+    function playPopSound(delayOffsetInSeconds) {
+        setTimeout(() => {
+            initUiAudio();
+            const osc = uiAudioCtx.createOscillator();
+            const gain = uiAudioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, uiAudioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, uiAudioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.2, uiAudioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, uiAudioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(uiAudioCtx.destination);
+            osc.start();
+            osc.stop(uiAudioCtx.currentTime + 0.1);
+        }, delayOffsetInSeconds * 1000);
+    }
+
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('button');
+        if (button && !button.disabled) playClickSound();
+    });
+
+    function stopIntroMusic() {
+        const introAudio = document.getElementById('introAudio');
+        const robertVoice = document.getElementById('robertVoice');
+        introAudio.pause();
+        robertVoice.pause();
+        introAudio.currentTime = 0;
+        robertVoice.currentTime = 0;
+    }
+
+    // --- SKRYPT EFEKTÓW TŁA CZOŁÓWKI (REFLEKTORY, NUTKI, FAJERWERKI) ---
+    const canvas = document.getElementById('fxCanvas');
+    const ctx = canvas.getContext('2d');
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    let particles = [];
+    let musicNotes = [];
+    let spotlightAngle = 0;
+    let effectTimer = null;
+    let fadeOutInterval = null;
+
+    function createFirework(x, y) {
+        const colors = ['#ffb703', '#2ecc71', '#00d4ff', '#e74c3c', '#9b59b6', '#ffffff'];
+        for (let i = 0; i < 45; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 7 + 2;
+            particles.push({
+                x: x, y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                alpha: 1,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: Math.random() * 3 + 2
+            });
+        }
+    }
+
+    function createMusicNote() {
+        const notesSymbols = ['♪', '♫', '♬', '♩'];
+        musicNotes.push({
+            x: Math.random() * canvas.width,
+            y: canvas.height + 40,
+            vy: Math.random() * 3 + 2,
+            vx: (Math.random() - 0.5) * 2.5,
+            alpha: 1,
+            symbol: notesSymbols[Math.floor(Math.random() * notesSymbols.length)],
+            size: Math.random() * 14 + 22
+        });
+    }
+
+    function animateStudio() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        spotlightAngle += 0.015;
+        ctx.save();
+        ctx.globalAlpha = 0.12;
+
+        let grad1 = ctx.createLinearGradient(0, 0, canvas.width / 2 + Math.sin(spotlightAngle) * 350, canvas.height);
+        grad1.addColorStop(0, '#00d4ff'); grad1.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad1;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width / 2 + Math.sin(spotlightAngle) * 450, canvas.height); ctx.lineTo(0, canvas.height); ctx.fill();
+
+        let grad2 = ctx.createLinearGradient(canvas.width, 0, canvas.width / 2 - Math.sin(spotlightAngle) * 350, canvas.height);
+        grad2.addColorStop(0, '#ffb703'); grad2.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad2;
+        ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width / 2 - Math.sin(spotlightAngle) * 450, canvas.height); ctx.lineTo(canvas.width, canvas.height); ctx.fill();
+        ctx.restore();
+
+        musicNotes.forEach((n, index) => {
+            n.y -= n.vy;
+            n.x += n.vx;
+            if (n.y < canvas.height * 0.2) n.alpha -= 0.02;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(n.alpha, 0);
+            ctx.fillStyle = '#ffd700';
+            ctx.font = `bold ${n.size}px Arial, sans-serif`;
+            ctx.shadowColor = '#ffb703'; ctx.shadowBlur = 15;
+            ctx.fillText(n.symbol, n.x, n.y);
+            ctx.restore();
+
+            if (n.y < -50 || n.alpha <= 0) musicNotes.splice(index, 1);
+        });
+
+        particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy;
+            p.vy += 0.12;
+            p.alpha -= 0.018;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(p.alpha, 0);
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+
+            if (p.alpha <= 0) particles.splice(index, 1);
+        });
+
+        requestAnimationFrame(animateStudio);
+    }
+    animateStudio();
+
+    function startStudioShowEffects() {
+        effectTimer = setInterval(() => {
+            const rx = Math.random() * (canvas.width - 150) + 75;
+            const ry = Math.random() * (canvas.height * 0.55);
+            createFirework(rx, ry);
+            createMusicNote();
+            createMusicNote();
+        }, 280);
+    }
+
+    function stopStudioShowEffects() {
+        if (effectTimer) {
+            clearInterval(effectTimer);
+            effectTimer = null;
+        }
+        if (fadeOutInterval) return;
+
+        fadeOutInterval = setInterval(() => {
+            let stillAlive = false;
+            particles.forEach(p => { p.alpha -= 0.02; if(p.alpha > 0) stillAlive = true; });
+            musicNotes.forEach(n => { n.alpha -= 0.02; if(n.alpha > 0) stillAlive = true; });
+            
+            if (!stillAlive) {
+                clearInterval(fadeOutInterval);
+                fadeOutInterval = null;
+                particles = [];
+                musicNotes = [];
+            }
+        }, 30);
+    }
+
+    function typeWriterEffect(text, elementId, speed = 45) {
+        const el = document.getElementById(elementId);
+        if(!el) return;
+        el.innerHTML = "";
+        const wrapper = document.getElementById('speechBubbleWrapper');
+        if (wrapper) wrapper.classList.add('visible');
+        let i = 0;
+
+        function typing() {
+            if (i < text.length) {
+                el.innerHTML += text.charAt(i);
+                i++;
+                setTimeout(typing, speed);
+            }
+        }
+        typing();
+    }
+
+    // --- INTEGRACJA CZOŁÓWKI ZE STARTEM I KINOWYM ROZMYCIEM DO MENU ---
+    async function startShow() {
+        const startScreen = document.getElementById('startScreen');
+        const introScreen = document.getElementById('introScreen');
+        const mainMenuScreen = document.getElementById('mainMenuScreen');
+        const card = document.getElementById('mainCard');
+        const introAudio = document.getElementById('introAudio');
+        const robertVoice = document.getElementById('robertVoice');
+
+        startScreen.style.display = 'none';
+        card.classList.add('punch-effect'); 
+
+        introAudio.onended = () => {
+            stopStudioShowEffects();
+        };
+
+        setTimeout(async () => {
+            introScreen.style.display = 'flex';
+            startStudioShowEffects();
+
+            try {
+                introAudio.currentTime = 0;
+                robertVoice.currentTime = 0;
+                await introAudio.play().catch(() => {});
+                await robertVoice.play().catch(() => {});
+            } catch (e) {
+                console.log("Audio pominięte", e);
+            }
+
+            setTimeout(() => {
+                typeWriterEffect("No to co Kindziu, pora na trening?", "speechText", 45);
+            }, 300);
+
+            setTimeout(() => {
+                card.classList.remove('punch-effect');
+                
+                requestAnimationFrame(() => {
+                    card.classList.add('blur-effect');
+
+                    setTimeout(() => {
+                        introScreen.style.display = 'none';
+                        mainMenuScreen.style.display = 'block';
+                        homeBtn.style.display = 'flex';
+                        card.classList.remove('blur-effect');
+                    }, 800); 
+
+                });
+            }, 4000);
+        }, 300);
+    }
+
+    // PEŁNA BAZA 949 UTWORÓW
+    const masterSongPool = [
+      { category: "Anna Jantar", query: "Anna Jantar Tyle slonca w calym miescie", title: "Tyle słońca w całym mieście - Anna Jantar" },
+      { category: "Anna Jantar", query: "Anna Jantar Najtrudniejszy pierwszy krok", title: "Najtrudniejszy pierwszy krok - Anna Jantar" },
+      { category: "Anna Jantar", query: "Anna Jantar Nic nie moze wiecznie trwac", title: "Nic nie może wiecznie trwać - Anna Jantar" },
+      { category: "Anna Jantar", query: "Anna Jantar Staruszek swiat", title: "Staruszek świat - Anna Jantar" },
+      { category: "Anna Jantar", query: "Anna Jantar Zawsze gdzie ty", title: "Zgubiłam klucz do nieba - Anna Jantar" },
+      { category: "Irena Santor", query: "Irena Santor Juz nie ma dzikich plaz", title: "Już nie ma dzikich plaż - Irena Santor" },
+      { category: "Irena Santor", query: "Irena Santor Powrocisz tu", title: "Powrócisz tu - Irena Santor" },
+      { category: "Irena Santor", query: "Irena Santor Tych lat nie odda nikt", title: "Tych lat nie odda nikt - Irena Santor" },
+      { category: "Irena Santor", query: "Irena Santor Embarras", title: "Embarras - Irena Santor" },
+      { category: "Krzysztof Krawczyk", query: "Krzysztof Krawczyk Parostatkiem", title: "Parostatek - Krzysztof Krawczyk" },
+      { category: "Krzysztof Krawczyk", query: "Krzysztof Krawczyk Moj przyjacielu", title: "Mój przyjacielu - Krzysztof Krawczyk & Goran Bregović" },
+      { category: "Krzysztof Krawczyk", query: "Krzysztof Krawczyk Chcialem byc", title: "Chciałem być - Krzysztof Krawczyk" },
+      { category: "Krzysztof Krawczyk", query: "Krzysztof Krawczyk Rysunek na szkle", title: "Rysunek na szkle - Krzysztof Krawczyk" },
+      { category: "Krzysztof Krawczyk", query: "Krzysztof Krawczyk Za Toba pojde jak na bal", title: "Za Tobą pójdę jak na bal - Krzysztof Krawczyk" },
+      { category: "Krzysztof Krawczyk", query: "Krzysztof Krawczyk Ostatni raz zatanczysz ze mna", title: "Ostatni raz zatańczysz ze mną - Krzysztof Krawczyk" },
+      { category: "Krzysztof Krawczyk", query: "Krzysztof Krawczyk Bo jestes ty", title: "Bo jesteś Ty - Krzysztof Krawczyk" },
+      { category: "Maryla Rodowicz", query: "Maryla Rodowicz Malgoska", title: "Małgośka - Maryla Rodowicz" },
+      { category: "Maryla Rodowicz", query: "Maryla Rodowicz Niech zyje bal", title: "Niech żyje bal - Maryla Rodowicz" },
+      { category: "Maryla Rodowicz", query: "Maryla Rodowicz Sing Sing", title: "Sing-Sing - Maryla Rodowicz" },
+      { category: "Maryla Rodowicz", query: "Maryla Rodowicz Kolorowe jarmarki", title: "Kolorowe jarmarki - Maryla Rodowicz" },
+      { category: "Maryla Rodowicz", query: "Maryla Rodowicz Wsiasc do pociagu", title: "Remedium (Wsiąść do pociągu) - Maryla Rodowicz" },
+      { category: "Maryla Rodowicz", query: "Maryla Rodowicz Kasa sex", title: "Kasa i sex - Maryla Rodowicz" },
+      { category: "Zbigniew Wodecki", query: "Zbigniew Wodecki Zacznij od Bacha", title: "Zacznij od Bacha - Zbigniew Wodecki" },
+      { category: "Zbigniew Wodecki", query: "Zbigniew Wodecki Chalupy Welcome To", title: "Chałupy Welcome To - Zbigniew Wodecki" },
+      { category: "Zbigniew Wodecki", query: "Zbigniew Wodecki Izolda", title: "Izolda - Zbigniew Wodecki" },
+      { category: "Zbigniew Wodecki", query: "Zbigniew Wodecki Opowiadaj mi tak", title: "Opowiadaj mi tak - Zbigniew Wodecki" },
+      { category: "Zbigniew Wodecki", query: "Zbigniew Wodecki Lubie wracac tam gdzie bylem", title: "Lubię wracać tam, gdzie byłem - Zbigniew Wodecki" },
+      { category: "Andrzej Zaucha", query: "Andrzej Zaucha Bylas serca biciem", title: "Byłaś serca biciem - Andrzej Zaucha" },
+      { category: "Andrzej Zaucha", query: "Andrzej Zaucha C'est la vie", title: "C'est la vie (Paryż z deszczem) - Andrzej Zaucha" },
+      { category: "Andrzej Zaucha", query: "Andrzej Zaucha Czarny albinos", title: "Czarny Alibaba - Andrzej Zaucha" },
+      { category: "Andrzej Zaucha", query: "Andrzej Zaucha Badz moim natchnieniem", title: "Bądź moim natchnieniem - Andrzej Zaucha" },
+      { category: "Czerwone Gitary", query: "Czerwone Gitary Historia jednej znajomosci", title: "Historia jednej znajomości - Czerwone Gitary" },
+      { category: "Czerwone Gitary", query: "Czerwone Gitary Anna Maria", title: "Anna Maria - Czerwone Gitary" },
+      { category: "Czerwone Gitary", query: "Czerwone Gitary Nikt na swiecie nie wie", title: "Nikt na świecie nie wie - Czerwone Gitary" },
+      { category: "Czerwone Gitary", query: "Czerwone Gitary Matura", title: "Matura - Czerwone Gitary" },
+      { category: "Czerwone Gitary", query: "Czerwone Gitary Nie zadzieraj nosa", title: "Nie zadzieraj nosa - Czerwone Gitary" },
+      { category: "Czerwone Gitary", query: "Czerwone Gitary Tak bardzo sie staralem", title: "Tak bardzo się starałem - Czerwone Gitary" },
+      { category: "Czerwone Gitary", query: "Czerwone Gitary Dozwolone od lat 18", title: "Dozwolone od lat 18 - Czerwone Gitary" },
+      { category: "Ryszard Rynkowski", query: "Ryszard Rynkowski Dziewczyny lubia braz", title: "Dziewczyny lubiają brąz - Ryszard Rynkowski" },
+      { category: "Ryszard Rynkowski", query: "Ryszard Rynkowski Wypijmy za bledy", title: "Wypijmy za błędy - Ryszard Rynkowski" },
+      { category: "Ryszard Rynkowski", query: "Ryszard Rynkowski Jedzie pociag z daleka", title: "Jedzie pociąg z daleka - Ryszard Rynkowski" },
+      { category: "Ryszard Rynkowski", query: "Ryszard Rynkowski Za mlodzi za starzy", title: "Za młodzi, za starzy - Ryszard Rynkowski" },
+      { category: "Ryszard Rynkowski", query: "Ryszard Rynkowski Szczesliwej drogi juz czas", title: "Szczęśliwej drogi już czas - Ryszard Rynkowski" },
+      { category: "Lady Pank", query: "Lady Pank Mniej niz zero", title: "Mniej niż zero - Lady Pank" },
+      { category: "Lady Pank", query: "Lady Pank Kryzysowa narzeczona", title: "Kryzysowa narzeczona - Lady Pank" },
+      { category: "Lady Pank", query: "Lady Pank Zawsze tam gdzie ty", title: "Zawsze tam, gdzie Ty - Lady Pank" },
+      { category: "Lady Pank", query: "Lady Pank Tacy sami", title: "Tacy sami - Lady Pank" },
+      { category: "Lady Pank", query: "Lady Pank Tancz glupia tancz", title: "Tańcz głupia, tańcz - Lady Pank" },
+      { category: "Lady Pank", query: "Lady Pank Zostawcie Titanica", title: "Zostawcie Titanica - Lady Pank" },
+      { category: "Lady Pank", query: "Lady Pank Wciaz bardziej obcy", title: "Wciąż bardziej obcy - Lady Pank" },
+      { category: "Perfect", query: "Perfect Autobiografia", title: "Autobiografia - Perfect" },
+      { category: "Perfect", query: "Perfect Nie placz Ewka", title: "Nie płacz Ewka - Perfect" },
+      { category: "Perfect", query: "Perfect Ale wkolo jest wesolo", title: "Ale wkoło jest wesoło - Perfect" },
+      { category: "Perfect", query: "Perfect Chcemy byc soba", title: "Chcemy być sobą - Perfect" },
+      { category: "Perfect", query: "Perfect Niewiele ci moge dac", title: "Niewiele Ci mogę dać - Perfect" },
+      { category: "Perfect", query: "Perfect Pepe wroc", title: "Pepe wróć - Perfect" },
+      { category: "Budka Suflera", query: "Budka Suflera Jolka Jolka", title: "Jolka, Jolka pamiętasz - Budka Suflera" },
+      { category: "Budka Suflera", query: "Budka Suflera Takie tango", title: "Takie tango - Budka Suflera" },
+      { category: "Budka Suflera", query: "Budka Suflera Bal wszystkich swietych", title: "Bal wszystkich świętych - Budka Suflera" },
+      { category: "Budka Suflera", query: "Budka Suflera Cien wielkiej gory", title: "Cień wielkiej góry - Budka Suflera" },
+      { category: "Budka Suflera", query: "Budka Suflera Za ostatni grosz", title: "Za ostatni grosz - Budka Suflera" },
+      { category: "Budka Suflera", query: "Budka Suflera Ratujmy kosmos", title: "Ratujmy co się da - Budka Suflera" },
+      { category: "Bajm", query: "Bajm Biala armia", title: "Biała armia - Bajm" },
+      { category: "Bajm", query: "Bajm Co mi Panie dasz", title: "Co mi Panie dasz - Bajm" },
+      { category: "Bajm", query: "Bajm Piechota do lata", title: "Piechotą do lata - Bajm" },
+      { category: "Bajm", query: "Bajm Szklanka wody", title: "Szklanka wody - Bajm" },
+      { category: "Bajm", query: "Bajm Nie ma wody na pustyni", title: "Nie ma wody na pustyni - Bajm" },
+      { category: "Dżem", query: "Dzem Wehikul czasu", title: "Wehikuł czasu - Dżem" },
+      { category: "Dżem", query: "Dzem Whiskey", title: "Whisky - Dżem" },
+      { category: "Dżem", query: "Dzem Czerwony jak cegla", title: "Czerwony jak cegła - Dżem" },
+      { category: "Dżem", query: "Dzem Sen o Victorii", title: "Sen o Victorii - Dżem" },
+      { category: "Dżem", query: "Dzem Naiwne pytania", title: "Naiwne pytania - Dżem" },
+      { category: "Golec uOrkiestra", query: "Golec uOrkiestra Sciernisco", title: "Ściernisco - Golec uOrkiestra" },
+      { category: "Golec uOrkiestra", query: "Golec uOrkiestra Lornetka", title: "Lornetka - Golec uOrkiestra" },
+      { category: "Golec uOrkiestra", query: "Golec uOrkiestra Slodycze", title: "Słodycze - Golec uOrkiestra" },
+      { category: "Golec uOrkiestra", query: "Golec uOrkiestra Crazy is my life", title: "Crazy is My Life - Golec uOrkiestra" },
+      { category: "Golec uOrkiestra", query: "Golec uOrkiestra Gora Ty", title: "Górą Ty - Golec uOrkiestra" },
+      { category: "Brathanki", query: "Brathanki Czerwone korale", title: "Czerwone korale - Brathanki" },
+      { category: "Brathanki", query: "Brathanki W kinie w Lublinie", title: "W kinie, w Lublinie - Brathanki" },
+      { category: "Brathanki", query: "Brathanki Gdzie ten ktory powie mi", title: "Gdzie ten, który powie mi - Brathanki" },
+      { category: "Kombii & Kombi", query: "Kombi Slodkiego milego zycia", title: "Słodkiego, miłego życia - Kombi" },
+      { category: "Kombii & Kombi", query: "Kombi Nasze randez-vous", title: "Nasze rendez-vous - Kombi" },
+      { category: "Kombii & Kombi", query: "Kombii Pokolenie", title: "Pokolenie - Kombii" },
+      { category: "Kombii & Kombi", query: "Kombi Black and White", title: "Black and White - Kombi" },
+      { category: "Kombii & Kombi", query: "Kombii Awinion", title: "Awinion - Kombii" },
+      { category: "Wilki", query: "Wilki Son of the blue sky", title: "Son of the Blue Sky - Wilki" },
+      { category: "Wilki", query: "Wilki Urke", title: "Urke - Wilki" },
+      { category: "Wilki", query: "Wilki Bohema", title: "Bohema - Wilki" },
+      { category: "Wilki", query: "Wilki标志 Aborygen", title: "Aborygen - Wilki" },
+      { category: "Polski Pop Lata 90. i 00.", query: "Varius Manx Orla cien", title: "Orła cień - Varius Manx" },
+      { category: "Polski Pop Lata 90. i 00.", query: "Varius Manx Zanim zrozumiesz", title: "Zanim zrozumiesz - Varius Manx" },
+      { category: "Polski Pop Lata 90. i 00.", query: "Kasia Kowalska Spowiedz", title: "Spowiedź - Kasia Kowalska" },
+      { category: "Polski Pop Lata 90. i 00.", query: "Kasia Kowalska Cos optymistycznego", title: "Coś optymistycznego - Kasia Kowalska" },
+      { category: "Polski Pop Lata 90. i 00.", query: "De Mono Statki na niebie", title: "Statki na niebie - De Mono" },
+      { category: "Polski Pop Lata 90. i 00.", query: "Andrzej Piaseczny Imie deszczu", title: "Imię deszczu - Mafia" },
+      { category: "Polski Pop Lata 90. i 00.", query: "Andrzej Piaseczny Chodz przytul", title: "Chodź, przytul, przebacz - Andrzej Piaseczny" },
+      { category: "ABBA", query: "Abba Dancing Queen", title: "Dancing Queen - ABBA" },
+      { category: "ABBA", query: "Abba Mamma Mia", title: "Mamma Mia - ABBA" },
+      { category: "ABBA", query: "Abba Waterloo", title: "Waterloo - ABBA" },
+      { category: "ABBA", query: "Abba标志 Gimme Gimme Gimme", title: "Gimme! Gimme! Gimme! - ABBA" },
+      { category: "ABBA", query: "Abba The Winner Takes It All", title: "The Winner Takes It All - ABBA" },
+      { category: "ABBA", query: "Abba SOS", title: "SOS - ABBA" },
+      { category: "ABBA", query: "Abba Fernando", title: "Fernando - ABBA" },
+      { category: "ABBA", query: "Abba Take A Chance On Me", title: "Take a Chance On Me - ABBA" },
+      { category: "ABBA", query: "Abba Money Money Money", title: "Money, Money, Money - ABBA" },
+      { category: "ABBA", query: "Abba Super Trouper", title: "Super Trouper - ABBA" },
+      { category: "Boney M.", query: "Boney M Daddy Cool", title: "Daddy Cool - Boney M." },
+      { category: "Boney M.", query: "Boney M Rasputin", title: "Rasputin - Boney M." },
+      { category: "Boney M.", query: "Boney M Rivers of Babylon", title: "Rivers of Babylon - Boney M." },
+      { category: "Boney M.", query: "Boney M Ma Baker", title: "Ma Baker - Boney M." },
+      { category: "Boney M.", query: "Boney M Sunny", title: "Sunny - Boney M." },
+      { category: "Boney M.", query: "Boney M Belfast", title: "Belfast - Boney M." },
+      { category: "Boney M.", query: "Boney M Hooray Hooray", title: "Hooray! Hooray! - Boney M." },
+      { category: "Włoskie Hity", query: "Al Bano Felicita", title: "Felicità - Al Bano & Romina Power" },
+      { category: "Włoskie Hity", query: "Al Bano Ci sara", title: "Ci Sarà - Al Bano & Romina Power" },
+      { category: "Włoskie Hity", query: "Toto Cutugno L Italiano", title: "L'Italiano - Toto Cutugno" },
+      { category: "Włoskie Hity", query: "Toto Cutugno Solo Noi", title: "Solo noi - Toto Cutugno" },
+      { category: "Włoskie Hity", query: "Ricchi e Poveri Sara perche ti amo", title: "Sarà perché ti amo - Ricchi & Poveri" },
+      { category: "Włoskie Hity", query: "Ricchi e Poveri Mamma Maria", title: "Mamma Maria - Ricchi & Poveri" },
+      { category: "Włoskie Hity", query: "Eros Ramazzotti Cose della vita", title: "Cose della vita - Eros Ramazzotti" },
+      { category: "Włoskie Hity", query: "Eros Ramazzotti Piu bella cosa", title: "Più bella cosa - Eros Ramazzotti" },
+      { category: "Włoskie Hity", query: "Drupi Sereno e", title: "Sereno è - Drupi" },
+      { category: "Włoskie Hity", query: "Drupi Piccola e fragile", title: "Piccola e fragile - Drupi" },
+      { category: "Włoskie Hity", query: "Francesco Napoli Balla Balla", title: "Balla Balla - Francesco Napoli" },
+      { category: "Modern Talking", query: "Modern Talking Youre My Heart Youre My Soul", title: "You're My Heart, You're My Soul - Modern Talking" },
+      { category: "Modern Talking", query: "Modern Talking Cheri Cheri Lady", title: "Cheri Cheri Lady - Modern Talking" },
+      { category: "Modern Talking", query: "Modern Talking Brother Louie", title: "Brother Louie - Modern Talking" },
+      { category: "Modern Talking", query: "Modern Talking Atlantis Is Calling", title: "Atlantis Is Calling - Modern Talking" },
+      { category: "Modern Talking", query: "Modern Talking Geronimos Cadillac", title: "Geronimo's Cadillac - Modern Talking" },
+      { category: "Maanam", query: "Maanam Cykady na Cykladach", title: "Cykady na Cykladach - Maanam" },
+      { category: "Maanam", query: "Maanam Boskie Buenos", title: "Boskie Buenos - Maanam" },
+      { category: "Maanam", query: "Maanam Kocham cie kochanie moje", title: "Kocham cię, kochanie moje - Maanam" },
+      { category: "Maanam", query: "Maanam Krakowski spleen", title: "Krakowski spleen - Maanam" },
+      { category: "Maanam", query: "Maanam Lucciola", title: "Lucciola - Maanam" },
+      { category: "Maanam", query: "Maanam Szare miraze", title: "Szare miraże - Maanam" },
+      { category: "Urszula i Lombard", query: "Urszula Dmuchawce latawce wiatr", title: "Dmuchawce, latawce, wiatr - Urszula" },
+      { category: "Urszula i Lombard", query: "Urszula Konik na biegunach", title: "Konik na biegunach - Urszula" },
+      { category: "Urszula i Lombard", query: "Urszula Malinowy krol", title: "Malinowy król - Urszula" },
+      { category: "Lombard Szklana pogoda", query: "Lombard Szklana pogoda", title: "Szklana pogoda - Lombard" },
+      { category: "Lombard Przezyj to sam", query: "Lombard Przezyj to sam", title: "Przeżyj to sam - Lombard" },
+      { category: "T.Love i KULT", query: "T.Love Chlopaki nie placza", title: "Chłopaki nie płaczą - T.Love" },
+      { category: "T.Love i KULT", query: "T.Love Warszawa", title: "Warszawa - T.Love" },
+      { category: "T.Love i KULT", query: "T.Love King", title: "King - T.Love" },
+      { category: "T.Love i KULT", query: "Kult Baranek", title: "Baranek - Kult" },
+      { category: "T.Love i KULT", query: "Kult Gdy nie ma dzieci", title: "Gdy nie ma dzieci - Kult" },
+      { category: "T.Love i KULT", query: "Kult Arahja", title: "Arahja - Kult" },
+      { category: "Elektryczne Gitary", query: "Elektryczne Gitary Kiler", title: "Kiler - Elektryczne Gitary" },
+      { category: "Elektryczne Gitary", query: "Elektryczne Gitary Dzieci", title: "Dzieci wybiegły - Elektryczne Gitary" },
+      { category: "Elektryczne Gitary", query: "Elektryczne Gitary Co ty tutaj robisz", title: "Co ty tutaj robisz - Elektryczne Gitary" },
+      { category: "Elektryczne Gitary", query: "Elektryczne Gitary Wlosy", title: "Włosy - Elektryczne Gitary" },
+      { category: "Disco Polo Klasyka", query: "Boys Jestes szalona", title: "Jesteś szalona - Boys" },
+      { category: "Disco Polo Klasyka", query: "Boys Wolnosc", title: "Wolność - Boys" },
+      { category: "Disco Polo Klasyka", query: "Boys Chlop z Mazur", title: "Chłop z Mazur - Boys" },
+      { category: "Disco Polo Klasyka", query: "Akcent Przez twe oczy zielone", title: "Przez twe oczy zielone - Akcent" },
+      { category: "Disco Polo Klasyka", query: "Akcent Przekorny los", title: "Przekorny los - Akcent" },
+      { category: "Disco Polo Klasyka", query: "Akcent Prawdziwa milosc to ty", title: "Prawdziwa miłość to Ty - Akcent" },
+      { category: "Disco Polo Klasyka", query: "Weekend Ona tanczy dla mnie", title: "Ona tańczy dla mnie - Weekend" },
+      { category: "Disco Polo Klasyka", query: "Bayer Full Majteczki w kropki", title: "Majteczki w kropki - Bayer Full" },
+      { category: "Disco Polo Klasyka", query: "Bayer Full Wszyscy Polacy", title: "Wszyscy Polacy - Bayer Full" },
+      { category: "Disco Polo Klasyka", query: "Milano O tobie kochana", title: "O Tobie kochana - Milano" },
+      { category: "Disco Polo Klasyka", query: "Top One Ciao Italia", title: "Ciao Italia - Top One" },
+      { category: "Disco Polo Klasyka", query: "Top One Bliska moim myslom", title: "Bliska moim myślom - Top One" },
+      { category: "Queen", query: "Queen Bohemian Rhapsody", title: "Bohemian Rhapsody - Queen" },
+      { category: "Queen", query: "Queen We Will Rock You", title: "We Will Rock You - Queen" },
+      { category: "Queen", query: "Queen We Are The Champions", title: "We Are the Champions - Queen" },
+      { category: "Queen", query: "Queen Radio Ga Ga", title: "Radio Ga Ga - Queen" },
+      { category: "Queen", query: "Queen I Want To Break Free", title: "I Want to Break Free - Queen" },
+      { category: "Queen", query: "Queen The Show Must Go On", title: "The Show Must Go On - Queen" },
+      { category: "Queen", query: "Queen Dont Stop Me Now", title: "Don't Stop Me Now - Queen" },
+      { category: "Michael Jackson", query: "Michael Jackson Billie Jean", title: "Billie Jean - Michael Jackson" },
+      { category: "Michael Jackson", query: "Michael Jackson Beat It", title: "Beat It - Michael Jackson" },
+      { category: "Michael Jackson", query: "Michael Jackson Thriller", title: "Thriller - Michael Jackson" },
+      { category: "Michael Jackson", query: "Michael Jackson Smooth Criminal", title: "Smooth Criminal - Michael Jackson" },
+      { category: "Michael Jackson", query: "Michael Jackson Black or White", title: "Black or White - Michael Jackson" },
+      { category: "Michael Jackson", query: "Michael Jackson Bad", title: "Bad - Michael Jackson" },
+      { category: "Madonna", query: "Madonna Like a Virgin", title: "Like a Virgin - Madonna" },
+      { category: "Madonna", query: "Madonna La Isla Bonita", title: "La Isla Bonita - Madonna" },
+      { category: "Madonna", query: "Madonna Material Girl", title: "Material Girl - Madonna" },
+      { category: "Madonna", query: "Madonna Hung Up", title: "Hung Up - Madonna" },
+      { category: "Madonna", query: "Madonna Vogue", title: "Vogue - Madonna" },
+      { category: "Zagraniczny Pop i Rock lat 80. i 90.", query: "Roxette It Must Have Been Love", title: "It Must Have Been Love - Roxette" },
+      { category: "Zagraniczny Pop i Rock lat 80. i 90.", query: "Roxette The Look", title: "The Look - Roxette" },
+      { category: "Zagraniczny Pop i Rock lat 80. i 90.", query: "Roxette Listen To Your Heart", title: "Listen To Your Heart - Roxette" },
+      { category: "Zagraniczny Pop i Rock lat 80. i 90.", query: "A-ha Take On Me", title: "Take On Me - A-ha" },
+      { category: "Zagraniczny Pop i Rock lat 80. i 90.", query: "Europe The Final Countdown", title: "The Final Countdown - Europe" },
+      { category: "Zagraniczny Pop i Rock lat 80. i 90.", query: "Alphaville Big In Japan", title: "Big In Japan - Alphaville" },
+      { category: "Zagraniczny Pop i Rock lat 80. i 90.", query: "Alphaville Forever Young", title: "Forever Young - Alphaville" },
+      { category: "Latino & Wakacyjne Hity", query: "Ricky Martin Livin La Vida Loca", title: "Livin' la Vida Loca - Ricky Martin" },
+      { category: "Latino & Wakacyjne Hity", query: "Ricky Martin Maria", title: "María - Ricky Martin" },
+      { category: "Latino & Wakacyjne Hity", query: "Kaoma Lambada", title: "Lambada - Kaoma" },
+      { category: "Latino & Wakacyjne Hity", query: "Los del Rio Macarena", title: "Macarena - Los del Río" },
+      { category: "Latino & Wakacyjne Hity", query: "Luis Fonsi Despacito", title: "Despacito - Luis Fonsi & Daddy Yankee" },
+      { category: "Latino & Wakacyjne Hity", query: "Alvaro Soler Sofia", title: "Sofia - Álvaro Soler" },
+      { category: "Latino & Wakacyjne Hity", query: "Don标志 Omar Danza Kuduro", title: "Danza Kuduro - Don Omar" },
+      { category: "Muzyka Filmowa i Seriale", query: "Janosik Temat", title: "Janosik - Jerzy Matuszkiewicz" },
+      { category: "Muzyka Filmowa i Seriale", query: "Czterdziestolatek Rosiewicz", title: "Czterdziestolatek - Andrzej Rosiewicz" },
+      { category: "Muzyka Filmowa i Seriale", query: "Stawka wieksza niz zycie", title: "Stawka większa niż życie - Jerzy Matuszkiewicz" },
+      { category: "Edyta Gorniak Dumka na dwa serca", query: "Edyta Gorniak Dumka na dwa serca", title: "Dumka na dwa serca - Edyta Górniak & Mietek Szcześniak" },
+      { category: "Muzyka Filmowa i Seriale", query: "Noce i dnie Walc Barbary", title: "Walc Barbary (Noce i dnie) - Waldemar Kazanecki" },
+      { category: "Muzyka Filmowa i Seriale", query: "Czterej pancerni i pies Deszcze", title: "Deszcze niespokojne - Edmund Fetting" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "sanah Szampan", title: "Szampan - sanah" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "sanah Ale jazz", title: "Ale jazz! - sanah & Vito Bambino" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "sanah Eldorado", title: "Eldorado - sanah & Daria Zawiałow" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "sanah Marcepan", title: "Marcepan - sanah" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "sanah Kolonska i szlugi", title: "Kolońska i szlugi - sanah" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Dawid Podsiadlo Malomiasteczkowy", title: "Małomiasteczkowy - Dawid Podsiadło" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Dawid Podsiadlo Trojkaty i kwadraty", title: "Trójkąty i kwadraty - Dawid Podsiadło" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Dawid Podsiadlo Wirus", title: "Wirus - Dawid Podsiadło" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Dawid Podsiadlo Nieznajomy", title: "Nieznajomy - Dawid Podsiadło" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Mrozu Zloto", title: "Złoto - Mrozu" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Mrozu Jak nie my to kto", title: "Jak nie my to kto - Mrozu" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Mrozu Aura", title: "Aura - Mrozu" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Daria Zawialow Kaonashi", title: "Kaonashi - Daria Zawiałow" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Kwiat Jabloni Dzis pozno pojde spac", title: "Dziś późno pójdę spać - Kwiat Jabłoni" },
+      { category: "Współczesny Polski Pop (2018-2026)", query: "Kwiat Jabloni Od nowa", title: "Od nowa - Kwiat Jabłoni" },
+      { category: "Skaldowie", query: "Skaldowie Wiosna", title: "Wiosna - Skaldowie" },
+      { category: "Skaldowie", query: "Skaldowie Przesliczna wiolonczelistka", title: "Prześliczna wiolonczelistka - Skaldowie" },
+      { category: "Skaldowie", query: "Skaldowie Wszystko mi mowi", title: "Wszystko mi mówi, że mnie ktoś pokochał - Skaldowie" },
+      { category: "Skaldowie", query: "Skaldowie Medytacje wiejskiego", title: "Medytacje wiejskiego listonosza - Skaldowie" },
+      { category: "Skaldowie", query: "Skaldowie Z kopyta kulig", title: "Z kopyta kulig rwie - Skaldowie" },
+      { category: "Kayah", query: "Kayah Supermenka", title: "Supermenka - Kayah" },
+      { category: "Kayah", query: "Kayah Testosteron", title: "Testosteron - Kayah" },
+      { category: "Kayah", query: "Kayah Po co", title: "Po co - Kayah" },
+      { category: "Edyta Górniak", query: "Edyta Gorniak To nie ja", title: "To nie ja - Edyta Górniak" },
+      { category: "Edyta Górniak", query: "Edyta Gorniak Dotyk", title: "Dotyk - Edyta Górniak" },
+      { category: "Edyta Górniak", query: "Edyta Gorniak Jestem kobieta", title: "Jestem kobietą - Edyta Górniak" },
+      { category: "Edyta Górniak", query: "Edyta Gorniak Kolorowy wiatr", title: "Kolorowy wiatr - Edyta Górniak" },
+      { category: "Andrzej Piaseczny (Piasek)", query: "Andrzej Piaseczny Prawie do nieba", title: "Prawie do nieba - Andrzej Piaseczny" },
+      { category: "Andrzej Piaseczny (Piasek)", query: "Andrzej Piaseczny Sniadanie do lozka", title: "Śniadanie do łóżka - Andrzej Piaseczny" },
+      { category: "Andrzej Piaseczny (Piasek)", query: "Andrzej Piaseczny Mocniej", title: "Mocniej - Andrzej Piaseczny" },
+      { category: "Andrzej Piaseczny (Piasek)", query: "Andrzej Piaseczny 15 dni", title: "15 dni - Andrzej Piaseczny" },
+      { category: "Stachursky", query: "Stachursky Typ niepokorny", title: "Typ niepokorny - Stachursky" },
+      { category: "Stachursky", query: "Stachursky Z kazdym twym oddechem", title: "Z każdym twym oddechem - Stachursky" },
+      { category: "Stachursky", query: "Stachursky Czuje i wiem", title: "Czuję i wiem - Stachursky" },
+      { category: "Stachursky", query: "Stachursky Zostanmy razem", title: "Zostańmy razem - Stachursky" },
+      { category: "Ich Troje", query: "Ich Troje Powiedz", title: "Powiedz - Ich Troje" },
+      { category: "Ich Troje", query: "Ich Troje Zawsze z toba chcialbym byc", title: "Zawsze z Tobą chciałbym być - Ich Troje" },
+      { category: "Ich Troje", query: "Ich Troje Babski swiat", title: "Babski świat - Ich Troje" },
+      { category: "Ich Troje", query: "Ich Troje Keine Grenzen", title: "Keine Grenzen - Ich Troje" },
+      { category: "Ich Troje", query: "Ich Troje A wszystko to bo ciebie kocham", title: "A wszystko to... (bo ciebie kocham) - Ich Troje" },
+      { category: "Polski Pop Lat 00.", query: "Feel A gdy jest juz ciemno", title: "A gdy jest już ciemno - Feel" },
+      { category: "Polski Pop Lat 00.", query: "Feel Pokaz na co cie stac", title: "Pokaż na co cię stać - Feel" },
+      { category: "Polski Pop Lat 00.", query: "Feel Jak aniola glos", title: "Jak anioła głos - Feel" },
+      { category: "Virgin Dzaga", query: "Virgin Dzaga", title: "Dżaga - Virgin" },
+      { category: "Virgin Znak pokoju", query: "Virgin Znak pokoju", title: "Znak pokoju - Virgin" },
+      { category: "Polski Pop Lat 00.", query: "Lzy Agnieszka juz dawno", title: "Agnieszka już dawno... - Łzy" },
+      { category: "Polski Pop Lat 00.", query: "Lzy Narcyz sie nazywam", title: "Narcyz się nazywam - Łzy" },
+      { category: "Kasia Cerekwicka Na kolana", query: "Kasia Cerekwicka Na kolana", title: "Na kolana - Kasia Cerekwicka" },
+      { category: "Gosia Andrzejewicz Pozwol zyc", query: "Gosia Andrzejewicz Pozwol zyc", title: "Pozwól żyć - Gosia Andrzejewicz" },
+      { category: "Krzysztof Kasa Kasowski", query: "Kasa Maczo", title: "Maczo - K.A.S.A." },
+      { category: "Krzysztof Kasa Kasowski", query: "Kasa Kazdy lubi boogie", title: "Każdy lubi boogie - K.A.S.A." },
+      { category: "Whitney Houston", query: "Whitney Houston I Will Always Love You", title: "I Will Always Love You - Whitney Houston" },
+      { category: "Whitney Houston", query: "Whitney Houston I Wanna Dance With Somebody", title: "I Wanna Dance with Somebody - Whitney Houston" },
+      { category: "Whitney Houston", query: "Whitney Houston How Will I Know", title: "How Will I Know - Whitney Houston" },
+      { category: "Whitney Houston", query: "Whitney Houston I Have Nothing", title: "I Have Nothing - Whitney Houston" },
+      { category: "Whitney Houston", query: "Whitney Houston Saving All My Love for You", title: "Saving All My Love for You - Whitney Houston" },
+      { category: "Tina Turner", query: "Tina Turner Simply The Best", title: "The Best - Tina Turner" },
+      { category: "Tina Turner", query: "Tina Turner Private Dancer", title: "Private Dancer - Tina Turner" },
+      { category: "Tina Turner", query: "Tina Turner Proud Mary", title: "Proud Mary - Tina Turner" },
+      { category: "Tina Turner", query: "Tina Turner Whats Love Got To Do", title: "What's Love Got to Do with It - Tina Turner" },
+      { category: "Elton John", query: "Elton John Im Still Standing", title: "I'm Still Standing - Elton John" },
+      { category: "Elton John", query: "Elton John Sacrifice", title: "Sacrifice - Elton John" },
+      { category: "Elton John", query: "Elton John Crocodile Rock", title: "Crocodile Rock - Elton John" },
+      { category: "Elton John", query: "Elton John Cold Heart", title: "Cold Heart - Elton John & Dua Lipa" },
+      { category: "Światowe Legendy Popu", query: "Celine Dion My Heart Will Go On", title: "My Heart Will Go On - Celine Dion" },
+      { category: "Światowe Legendy Popu", query: "Celine Dion Im Alive", title: "I'm Alive - Celine Dion" },
+      { category: "Światowe Legendy Popu", query: "Cher Believe", title: "Believe - Cher" },
+      { category: "Światowe Legendy Popu", query: "Kylie Minogue Cant Get You Out Of My Head", title: "Can't Get You Out of My Head - Kylie Minogue" },
+      { category: "Światowe Legendy Popu", query: "George Michael Careless Whisper", title: "Careless Whisper - George Michael" },
+      { category: "Światowe Legendy Popu", query: "George Michael Faith", title: "Faith - George Michael" },
+      { category: "Hity z Filmów i Musicali", query: "John Travolta Youre The One That I Want", title: "You're the One That I Want - John Travolta & Olivia Newton-John" },
+      { category: "Hity z Filmów i Musicali", query: "Bill Medley Time Of My Life", title: "(I've Had) The Time of My Life - Bill Medley & Jennifer Warnes" },
+      { category: "Hity z Filmów i Musicali", query: "Smash Mouth All Star", title: "All Star - Smash Mouth" },
+      { category: "Hity z Filmów i Musicali", query: "Ray Parker Ghostbusters", title: "Ghostbusters - Ray Parker Jr." },
+      { category: "Hity z Filmów i Musicali", query: "Survivor Eye Of The Tiger", title: "Eye of the Tiger - Survivor" },
+      { category: "Boysbandy i Girlsbandy", query: "Backstreet Boys Everybody", title: "Everybody (Backstreet's Back) - Backstreet Boys" },
+      { category: "Boysbandy i Girlsbandy", query: "Backstreet Boys I Want It That Way", title: "I Want It That Way - Backstreet Boys" },
+      { category: "Boysbandy i Girlsbandy", query: "Spice Girls Wannabe", title: "Wannabe - Spice Girls" },
+      { category: "Boysbandy i Girlsbandy", query: "NSync Bye Bye Bye", title: "Bye Bye Bye - *NSYNC" },
+      { category: "Boysbandy i Girlsbandy", query: "Westlife Swear It Again", title: "Swear It Again - Westlife" },
+      { category: "Boysbandy i Girlsbandy", query: "Take That Back For Good", title: "Back for Good - Take That" },
+      { category: "Zagraniczne Hity Lat 00.", query: "Lady Gaga Poker Face", title: "Poker Face - Lady Gaga" },
+      { category: "Zagraniczne Hity Lat 00.", query: "Lady Gaga Bad Romance", title: "Bad Romance - Lady Gaga" },
+      { category: "Zagraniczne Hity Lat 00.", query: "Katy Perry Hot N Cold", title: "Hot n Cold - Katy Perry" },
+      { category: "Zagraniczne Hity Lat 00.", query: "Rihanna Umbrella", title: "Umbrella - Rihanna" },
+      { category: "Zagraniczne Hity Lat 00.", query: "Shakira Waka Waka", title: "Waka Waka - Shakira" },
+      { category: "Zagraniczne Hity Lat 00.", query: "Shakira Whenever Wherever", title: "Whenever, Wherever - Shakira" },
+      { category: "Zagraniczne Hity Lat 00.", query: "Black Eyed Peas I Gotta Feeling", title: "I Gotta Feeling - Black Eyed Peas" },
+      { category: "Irena Jarocka", query: "Irena Jarocka Kawiarenki", title: "Kawiarenki - Irena Jarocka" },
+      { category: "Irena Jarocka", query: "Irena Jarocka Motylem jestem", title: "Motylem jestem - Irena Jarocka" },
+      { category: "Irena Jarocka", query: "Irena Jarocka Odplywaja kawiarenki", title: "Odpływają kawiarenki - Irena Jarocka" },
+      { category: "Irena Jarocka", query: "Irena Jarocka Wymyslilam cie", title: "Wymyśliłam Cię - Irena Jarocka" },
+      { category: "Czesław Niemen", query: "Czeslaw Niemen Dziwny jest ten swiat", title: "Dziwny jest ten świat - Czesław Niemen" },
+      { category: "Czesław Niemen", query: "Czeslaw Niemen Sen o Warszawie", title: "Sen o Warszawie - Czesław Niemen" },
+      { category: "Czesław Niemen", query: "Czeslaw Niemen Pod Papugami", title: "Pod Papugami - Czesław Niemen" },
+      { category: "Czesław Niemen", query: "Czeslaw Niemen Plonaca stodola", title: "Płonąca stodoła - Czesław Niemen" },
+      { category: "Czesław Niemen", query: "Czeslaw Niemen Jednego serca", title: "Jednego serca - Czesław Niemen" },
+      { category: "Jerzy Połomski", query: "Jerzy Polomski Bo z dziewczynami", title: "Bo z dziewczynami - Jerzy Połomski" },
+      { category: "Jerzy Połomski", query: "Jerzy标志 Polomski Cala sala spiewa", title: "Cała sala śpiewa z nami - Jerzy Połomski" },
+      { category: "Jerzy Połomski", query: "Jerzy Polomski Daj", title: "Daj - Jerzy Połomski" },
+      { category: "Halina Frąckowiak", query: "Halina Frackowiak Papierowy ksiezyc", title: "Papierowy księżyc - Halina Frąckowiak" },
+      { category: "Halina Frąckowiak", query: "Halina Frackowiak Badz gotowy dzis do drogi", title: "Bądź gotowy dziś do drogi - Halina Frąckowiak" },
+      { category: "Halina Frąckowiak", query: "Halina Frackowiak Serca gwiazd", title: "Serca gwiazd - Halina Frąckowiak" },
+      { category: "Halina Frąckowiak", query: "Halina Frackowiak Maly elf", title: "Mały elf - Halina Frąckowiak" },
+      { category: "Edyta Bartosiewicz", query: "Edyta Bartosiewicz Sen", title: "Sen - Edyta Bartosiewicz" },
+      { category: "Edyta Bartosiewicz", query: "Edyta Bartosiewicz Jenny", title: "Jenny - Edyta Bartosiewicz" },
+      { category: "Edyta Bartosiewicz", query: "Edyta Bartosiewicz Ostatni", title: "Ostatni - Edyta Bartosiewicz" },
+      { category: "Polska Scena Lat 00. i 10.", query: "Enej Radio Hello", title: "Radio Hello - Enej" },
+      { category: "Polska Scena Lat 00. i 10.", query: "Enej Skrzydlate rece", title: "Skrzydlate ręce - Enej" },
+      { category: "Polska Scena Lat 00. i 10.", query: "Enej Kamien z napisem Love", title: "Kamień z napisem Love - Enej" },
+      { category: "Zakopower Boso", query: "Zakopower Boso", title: "Boso - Zakopower" },
+      { category: "Polska Scena Lat 00. i 10.", query: "Pectus To co chcialbym Ci dac", title: "To co chciałbym Ci dać - Pectus" },
+      { category: "Polska Scena Lat 00. i 10.", query: "Pectus Barcelona", title: "Barcelona - Pectus" },
+      { category: "Blue Cafe Do nieba", query: "Blue Cafe Do nieba", title: "Do nieba - Blue Café" },
+      { category: "Blue Cafe You May Be In Love", query: "Blue Cafe You May Be In Love", title: "You May Be In Love - Blue Café" },
+      { category: "Video Papieros", query: "Video Papieros", title: "Papieros - Video" },
+      { category: "The Beatles", query: "The Beatles Hey Jude", title: "Hey Jude - The Beatles" },
+      { category: "The Beatles", query: "The Beatles Let It Be", title: "Let It Be - The Beatles" },
+      { category: "The Beatles", query: "The Beatles Yesterday", title: "Yesterday - The Beatles" },
+      { category: "The Beatles", query: "The Beatles Help", title: "Help! - The Beatles" },
+      { category: "The Beatles", query: "The Beatles Yellow Submarine", title: "Yellow Submarine - The Beatles" },
+      { category: "The Beatles", query: "The Beatles All You Need Is Love", title: "All You Need Is Love - The Beatles" },
+      { category: "Elvis Presley", query: "Elvis Presley Hound Dog", title: "Hound Dog - Elvis Presley" },
+      { category: "Elvis Presley", query: "Elvis Presley Jailhouse Rock", title: "Jailhouse Rock - Elvis Presley" },
+      { category: "Elvis Presley", query: "Elvis Presley Cant Help Falling In Love", title: "Can't Help Falling In Love - Elvis Presley" },
+      { category: "Elvis Presley", query: "Elvis Presley Suspicious Minds", title: "Suspicious Minds - Elvis Presley" },
+      { category: "Elvis Presley", query: "Elvis Presley Love Me Tender", title: "Love Me Tender - Elvis Presley" },
+      { category: "Eurodance Lat 90.", query: "Ace of Base All That She Wants", title: "All That She Wants - Ace of Base" },
+      { category: "Eurodance Lat 90.", query: "Haddaway What Is Love", title: "What Is Love - Haddaway" },
+      { category: "Eurodance Lat 90.", query: "Dr Alban Its My Life", title: "It's My Life - Dr. Alban" },
+      { category: "Eurodance Lat 90.", query: "Eiffel 65 Blue", title: "Blue (Da Ba Dee) - Eiffel 65" },
+      { category: "Eurodance Lat 90.", query: "Scatman John Scatman", title: "Scatman - Scatman John" },
+      { category: "Eurodance Lat 90.", query: "La Bouche Be My Lover", title: "Be My Lover - La Bouche" },
+      { category: "Eurodance Lat 90.", query: "Vengaboys Boom Boom Boom", title: "Boom, Boom, Boom, Boom!! - Vengaboys" },
+      { category: "Francuskie Hity", query: "Joe Dassin Les Champs Elysees", title: "Les Champs-Élysées - Joe Dassin" },
+      { category: "Francuskie Hity", query: "Alizee Moi Lolita", title: "Moi... Lolita - Alizée" },
+      { category: "Francuskie Hity", query: "Indila Derniere Danse", title: "Dernière danse - Indila" },
+      { category: "Francuskie Hity", query: "Stromae Alors On Danse", title: "Alors on danse - Stromae" },
+      { category: "Francuskie Hity", query: "Kate Ryan Voyage Voyage", title: "Voyage Voyage - Kate Ryan" },
+      { category: "Francuskie Hity", query: "Edith Piaf Non Je Ne Regrette Rien", title: "Non, je ne regrette rien - Édith Piaf" },
+      { category: "Współczesne Hity Światowe", query: "Adele Hello", title: "Hello - Adele" },
+      { category: "Współczesne Hity Światowe", query: "Adele Rolling In The Deep", title: "Rolling in the Deep - Adele" },
+      { category: "Współczesne Hity Światowe", query: "Adele Someone Like You", title: "Someone Like You - Adele" },
+      { category: "Współczesne Hity Światowe", query: "Ed Sheeran Perfect", title: "Perfect - Ed Sheeran" },
+      { category: "Współczesne Hity Światowe", query: "Ed Sheeran Bad Habits", title: "Bad Habits - Ed Sheeran" },
+      { category: "Współczesne Hity Światowe", query: "Taylor Swift Shake It Off", title: "Shake It Off - Taylor Swift" },
+      { category: "Współczesne Hity Światowe", query: "Taylor Swift Blank Space", title: "Blank Space - Taylor Swift" },
+      { category: "Współczesne Hity Światowe", query: "Imagine Dragons Believer", title: "Believer - Imagine Dragons" },
+      { category: "Współczesne Hity Światowe", query: "Billie Eilish Bad Guy", title: "Bad Guy - Billie Eilish" },
+      { category: "Alicja Majewska", query: "Alicja Majewska Odkryjemy milosc nieznana", title: "Odkryjemy miłość nieznaną - Alicja Majewska" },
+      { category: "Alicja Majewska", query: "Alicja Majewska Byc kobieta", title: "Być kobietą - Alicja Majewska" },
+      { category: "Alicja Majewska", query: "Alicja Majewska Jeszcze sie tam zagiel bieli", title: "Jeszcze się tam żagiel bieli - Alicja Majewska" },
+      { category: "Krystyna Prońko", query: "Krystyna Pronko Jestes lekiem na cale zlo", title: "Jesteś lekiem na całe zło - Krystyna Prońko" },
+      { category: "Sylwia Grzeszczak", query: "Sylwia Grzeszczak Male rzeczy", title: "Małe rzeczy - Sylwia Grzeszczak" },
+      { category: "Sylwia Grzeszczak", query: "Sylwia Grzeszczak Ksiezniczka", title: "Księżniczka - Sylwia Grzeszczak" },
+      { category: "Sylwia Grzeszczak", query: "Sylwia Grzeszczak Tamta dziewczyna", title: "Tamta dziewczyna - Sylwia Grzeszczak" },
+      { category: "Sylwia Grzeszczak", query: "Sylwia Grzeszczak Sen o przyszlosci", title: "Sen o przyszłości - Sylwia Grzeszczak" },
+      { category: "Sylwia Grzeszczak", query: "Sylwia Grzeszczak Pozyczony", title: "Pożyczony - Sylwia Grzeszczak" },
+      { category: "Ewa Farna i Margaret", query: "Ewa Farna Cicho", title: "Cicho - Ewa Farna" },
+      { category: "Ewa Farna i Margaret", query: "Ewa Farna Ewakuacja", title: "Ewakuacja - Ewa Farna" },
+      { category: "Ewa Farna i Margaret", query: "Ewa Farna Znak", title: "Znak - Ewa Farna" },
+      { category: "Margaret Thank You Very Much", query: "Margaret Thank You Very Much", title: "Thank You Very Much - Margaret" },
+      { category: "Margaret Heartbeat", query: "Margaret Heartbeat", title: "Heartbeat - Margaret" },
+      { category: "Margaret Cool Me Down", query: "Margaret Cool Me Down", title: "Cool Me Down - Margaret" },
+      { category: "Kamil Bednarek", query: "Kamil Bednarek Cisza", title: "Cisza - Kamil Bednarek" },
+      { category: "Kamil Bednarek", query: "Kamil Bednarek Dni ktorych nie znamy", title: "Dni, których nie znamy - Kamil Bednarek" },
+      { category: "Kamil Bednarek", query: "Kamil Bednarek Chwile jak te", title: "Chwile jak te - Kamil Bednarek" },
+      { category: "Kamil Bednarek", query: "Kamil Bednarek List", title: "List - Kamil Bednarek" },
+      { category: "Polskie Szlagiery Retro", query: "Piotr Szczepanik Goniac kormorany", title: "Goniąc kormorany - Piotr Szczepanik" },
+      { category: "Polskie Szlagiery Retro", query: "Piotr Szczepanik Kochac", title: "Kochać - Piotr Szczepanik" },
+      { category: "Polskie Szlagiery Retro", query: "Maria Koterbska Serduszko puka", title: "Serduszko puka w rytmie cza cza - Maria Koterbska" },
+      { category: "Polskie Szlagiery Retro", query: "Maria Koterbska Karuzela", title: "Karuzela - Maria Koterbska" },
+      { category: "Polskie Szlagiery Retro", query: "Wojciech Gassowski Gdzie sie podzialy", title: "Gdzie się podziały tamte prywatki - Wojciech Gąssowski" },
+      { category: "Bee Gees i Disco lat 70.", query: "Bee Gees Stayin Alive", title: "Stayin' Alive - Bee Gees" },
+      { category: "Bee Gees i Disco lat 70.", query: "Bee标志 Gees How Deep Is Your Love", title: "How Deep Is Your Love - Bee Gees" },
+      { category: "Bee Gees i Disco lat 70.", query: "Bee Gees Night Fever", title: "Night Fever - Bee Gees" },
+      { category: "Gloria Gaynor I Will Survive", query: "Gloria Gaynor I Will Survive", title: "I Will Survive - Gloria Gaynor" },
+      { category: "Earth Wind Fire September", query: "Earth Wind Fire September", title: "September - Earth, Wind & Fire" },
+      { category: "Village People YMCA", query: "Village People YMCA", title: "Y.M.C.A. - Village People" },
+      { category: "Kool And The Gang Celebration", query: "Kool And The Gang Celebration", title: "Celebration - Kool & The Gang" },
+      { category: "Tom Jones", query: "Tom Jones Sexbomb", title: "Sexbomb - Tom Jones" },
+      { category: "Tom Jones", query: "Tom Jones Delilah", title: "Delilah - Tom Jones" },
+      { category: "Tom Jones", query: "Tom Jones She's A Lady", title: "She's a Lady - Tom Jones" },
+      { category: "Tom Jones", query: "Tom Jones Its Not Unusual", title: "It's Not Unusual - Tom Jones" },
+      { category: "Tom Jones", query: "Tom Jones Green Green Grass of Home", title: "Green, Green Grass of Home - Tom Jones" },
+      { category: "Stevie Wonder i Soul", query: "Stevie Wonder I Just Called To Say I Love You", title: "I Just Called to Say I Love You - Stevie Wonder" },
+      { category: "Stevie Wonder i Soul", query: "Stevie Wonder Superstition", title: "Superstition - Stevie Wonder" },
+      { category: "Stevie Wonder i Soul", query: "Stevie Wonder Isnt She Lovely", title: "Isn't She Lovely - Stevie Wonder" },
+      { category: "Ray Charles Hit The Road Jack", query: "Ray Charles Hit The Road Jack", title: "Hit the Road Jack - Ray Charles" },
+      { category: "Ray Charles I Got A Woman", query: "Ray Charles I Got A Woman", title: "I Got a Woman - Ray Charles" },
+      { category: "Wielki Rock", query: "ACDC Highway To Hell", title: "Highway to Hell - AC/DC" },
+      { category: "Wielki Rock", query: "ACDC Thunderstruck", title: "Thunderstruck - AC/DC" },
+      { category: "Wielki Rock", query: "Bon Jovi Livin On A Prayer", title: "Livin' On a Prayer - Bon Jovi" },
+      { category: "Wielki Rock", query: "Bon Jovi Its My Life", title: "It's My Life - Bon Jovi" },
+      { category: "Wielki Rock", query: "Guns N Roses Sweet Child O Mine", title: "Sweet Child O' Mine - Guns N' Roses" },
+      { category: "Wielki Rock", query: "Guns N Roses November Rain", title: "November Rain - Guns N' Roses" },
+      { category: "Wielki Rock", query: "Nirvana Smells Like Teen Spirit", title: "Smells Like Teen Spirit - Nirvana" },
+      { category: "Wielkie Wokalistki", query: "Mariah Carey Hero", title: "Hero - Mariah Carey" },
+      { category: "Wielkie Wokalistki", query: "Mariah Carey Without You", title: "Without You - Mariah Carey" },
+      { category: "Aretha Franklin Respect", query: "Aretha Franklin Respect", title: "Respect - Aretha Franklin" },
+      { category: "Wielkie Wokalistki", query: "Cyndi Lauper Girls Just Want To Have Fun", title: "Girls Just Want to Have Fun - Cyndi Lauper" },
+      { category: "Wielkie Wokalistki", query: "Bonnie Tyler Total Eclipse Of The Heart", title: "Total Eclipse of the Heart - Bonnie Tyler" },
+      { category: "Wielkie Wokalistki", query: "Bonnie Tyler Holding Out For A Hero", title: "Holding Out for a Hero - Bonnie Tyler" },
+      { category: "Krystyna Giżowska i Eleni", query: "Krystyna Gizowska Zlote obraczki", title: "Złote obrączki - Krystyna Giżowska" },
+      { category: "Krystyna Giżowska i Eleni", query: "Krystyna Gizowska Nie bylo ciebie tyle lat", title: "Nie było ciebie tyle lat - Krystyna Giżowska" },
+      { category: "Eleni Milosc jak wino", query: "Eleni Milosc jak wino", title: "Miłość jak wino - Eleni" },
+      { category: "Agnieszka Chylińska i O.N.A.", query: "ONA Kiedy powiem sobie dosc", title: "Kiedy powiem sobie dość - O.N.A." },
+      { category: "Agnieszka Chylińska i O.N.A.", query: "ONA Znalazlam", title: "Znalazłam - O.N.A." },
+      { category: "Agnieszka Chylińska i O.N.A.", query: "Agnieszka Chylinska Krolowa lez", title: "Królowa łez - Agnieszka Chylińska" },
+      { category: "Agnieszka Chylińska i O.N.A.", query: "Agnieszka Chylinska Kiedy przyjdziesz do mnie", title: "Kiedy przyjdziesz do mnie - Agnieszka Chylińska" },
+      { category: "Polski Rock Lat 90.", query: "IRA Nadzieja", title: "Nadzieja - IRA" },
+      { category: "Polski Rock Lat 90.", query: "IRA Wiara", title: "Wiara - IRA" },
+      { category: "Polski Rock Lat 90.", query: "Sztywny Pal Azji Wieza radosci", title: "Wieża radości, wieża samotności - Sztywny Pal Azji" },
+      { category: "Polski Rock Lat 90.", query: "Chlopcy z Placu Broni O Ela", title: "O Ela! - Chłopcy z Placu Broni" },
+      { category: "Polski Rock Lat 90.", query: "Golden Life Oprocz blekitnego nieba", title: "Oprócz błękitnego nieba - Golden Life" },
+      { category: "Męskie Granie i Alternatywa", query: "Meskie Granie Orkiestra Poczatek", title: "Początek - Męskie Granie Orkiestra" },
+      { category: "Męskie Granie i Alternatywa", query: "Meskie Granie Orkiestra Supermoce", title: "Supermoce - Męskie Granie Orkiestra" },
+      { category: "Męskie Granie i Alternatywa", query: "Meskie Granie Orkiestra I Ciebie tez bardzo", title: "I Ciebie też, bardzo - Męskie Granie Orkiestra" },
+      { category: "Męskie Granie i Alternatywa", query: "Ralph Kaminski Kosmiczne energie", title: "Kosmiczne energie - Ralph Kaminski" },
+      { category: "Radiowy Hip-Hop Lat 00.", query: "Jeden Osiem L Jak zapomniec", title: "Jak zapomnieć - Jeden Osiem L" },
+      { category: "Radiowy Hip-Hop Lat 00.", query: "Mezo Sacrum", title: "Sacrum - Mezo & Kasia Wilk" },
+      { category: "Radiowy Hip-Hop Lat 00.", query: "Mezo Wazne", title: "Ważne - Mezo & Tabb" },
+      { category: "Radiowy Hip-Hop Lat 00.", query: "GrubSon Na szczycie", title: "Na szczycie - Grubson" },
+      { category: "Sting i The Police", query: "The Police Every Breath You Take", title: "Every Breath You Take - The Police" },
+      { category: "Sting i The Police", query: "The Police Roxanne", title: "Roxanne - The Police" },
+      { category: "Sting i The Police", query: "Sting Englishman In New York", title: "Englishman In New York - Sting" },
+      { category: "Sting i The Police", query: "Sting Shape Of My Heart", title: "Shape of My Heart - Sting" },
+      { category: "Sting i The Police", query: "Sting Fields Of Gold", title: "Fields of Gold - Sting" },
+      { category: "Synth Pop i Nowa Fala", query: "Depeche Mode Enjoy The Silence", title: "Enjoy the Silence - Depeche Mode" },
+      { category: "Synth Pop i Nowa Fala", query: "Depeche Mode Personal Jesus", title: "Personal Jesus - Depeche Mode" },
+      { category: "Synth Pop i Nowa Fala", query: "Depeche Mode Just Cant Get Enough", title: "Just Can't Get Enough - Depeche Mode" },
+      { category: "Synth Pop i Nowa Fala", query: "Eurythmics Sweet Dreams", title: "Sweet Dreams (Are Made of This) - Eurythmics" },
+      { category: "Synth Pop i Nowa Fala", query: "Pet Shop Boys Go West", title: "Go West - Pet Shop Boys" },
+      { category: "Synth Pop i Nowa Fala", query: "Pet Shop Boys Its A Sin", title: "It's a Sin - Pet Shop Boys" },
+      { category: "Bob Marley i Reggae", query: "Bob Marley No Woman No Cry", title: "No Woman, No Cry - Bob Marley & The Wailers" },
+      { category: "Bob Marley i Reggae", query: "Bob Marley Three Little Birds", title: "Three Little Birds - Bob Marley & The Wailers" },
+      { category: "Bob Marley i Reggae", query: "Bob Marley Could You Be Loved", title: "Could You Be Loved - Bob Marley & The Wailers" },
+      { category: "Bob Marley i Reggae", query: "Inner Circle Sweat", title: "Sweat (A La La La La Long) - Inner Circle" },
+      { category: "Bob Marley i Reggae", query: "UB40 Red Red Wine", title: "Red Red Wine - UB40" },
+      { category: "Country i Folk", query: "John Denver Take Me Home Country Roads", title: "Take Me Home, Country Roads - John Denver" },
+      { category: "Country i Folk", query: "Shania Twain Man I Feel Like A Woman", title: "Man! I Feel Like a Woman! - Shania Twain" },
+      { category: "Country i Folk", query: "Shania Twain That Dont Impress Me Much", title: "That Don't Impress Me Much - Shania Twain" },
+      { category: "Country i Folk", query: "Rednex Cotton Eye Joe", title: "Cotton Eye Joe - Rednex" },
+      { category: "Country i Folk", query: "Dolly Parton Jolene", title: "Jolene - Dolly Parton" },
+      { category: "Zdzisława Sośnicka", query: "Zdzislawa Sosnicka Aleja gwiazd", title: "Aleja gwiazd - Zdzisława Sośnicka" },
+      { category: "Urszula Sipińska", query: "Urszula Sipinska Sa takie dni w tygodniu", title: "Są takie dni w tygodniu - Urszula Sipińska" },
+      { category: "Urszula Sipińska", query: "Urszula Sipinska To byl swiat w zupelnie starym stylu", title: "To był świat w zupełnie starym stylu - Urszula Sipińska" },
+      { category: "Marek Grechuta i Grzegorz Turnau", query: "Marek Grechuta Bedziesz moja pania", title: "Będziesz moją panią - Marek Grechuta" },
+      { category: "Marek Grechuta i Grzegorz Turnau", query: "Marek Grechuta Nie dokazuj", title: "Nie dokazuj - Marek Grechuta" },
+      { category: "Marek Grechuta i Grzegorz Turnau", query: "Marek Grechuta Swiecie nasz", title: "Świecie nasz - Marek Grechuta" },
+      { category: "Marek Grechuta i Grzegorz Turnau", query: "Grzegorz Turnau Cichosza", title: "Cichosza - Grzegorz Turnau" },
+      { category: "Marek Grechuta i Grzegorz Turnau", query: "Grzegorz Turnau Bracka", title: "Bracka - Grzegorz Turnau" },
+      { category: "Marek Grechuta i Grzegorz Turnau", query: "Grzegorz Turnau Miedzy cisza a cisza", title: "Między ciszą a ciszą - Grzegorz Turnau" },
+      { category: "Republika i Obywatel G.C.", query: "Republika Biala flaga", title: "Biała flaga - Republika" },
+      { category: "Republika i Obywatel G.C.", query: "Republika Telefony", title: "Telefony - Republika" },
+      { category: "Republika i Obywatel G.C.", query: "Republika Mamona", title: "Mamona - Republika" },
+      { category: "Republika i Obywatel G.C.", query: "Obywatel G.C. Nie pytaj o Polske", title: "Nie pytaj o Polskę - Obywatel G.C." },
+      { category: "Republika i Obywatel G.C.", query: "Obywatel G.C. Tak tak to ja", title: "Tak... tak... to ja - Obywatel G.C." },
+      { category: "Hey i Kasia Nosowska", query: "Hey Teksański", title: "Teksański - Hey" },
+      { category: "Hey i Kasia Nosowska", query: "Hey Moja i twoja nadzieja", title: "Moja i twoja nadzieja - Hey" },
+      { category: "Hey i Kasia Nosowska", query: "Hey List", title: "List - Hey" },
+      { category: "Hey i Kasia Nosowska", query: "Hey Mimo wszystko", title: "Mimo wszystko - Hey" },
+      { category: "Hey i Kasia Nosowska", query: "Hey Cisza ja i czas", title: "Cisza, ja i czas - Hey" },
+      { category: "Hey i Kasia Nosowska", query: "Hey Sic", title: "Sic! - Hey" },
+      { category: "Młoda Polska Scena (2020+)", query: "Dawid Kwiatkowski Bez Ciebie", title: "Bez Ciebie - Dawid Kwiatkowski" },
+      { category: "Młoda Polska Scena (2020+)", query: "Dawid Kwiatkowski Proste", title: "Proste - Dawid Kwiatkowski" },
+      { category: "Młoda Polska Scena (2020+)", query: "Roksana Wegiel Anyone I Want To Be", title: "Anyone I Want to Be - Roksana Węgiel" },
+      { category: "Młoda Polska Scena (2020+)", query: "Roksana Wegiel Dobrze jest jak jest", title: "Dobrze jest, jak jest - Roksana Węgiel" },
+      { category: "Młoda Polska Scena (2020+)", query: "Viki Gabor Superhero", title: "Superhero - Viki Gabor" },
+      { category: "Młoda Polska Scena (2020+)", query: "Baranovski Lubie byc z nia", title: "Lubię być z nią - BARANOVSKI" },
+      { category: "Złote Lata 80. - Italo Disco & Pop", query: "Sabrina Boys", title: "Boys (Summertime Love) - Sabrina" },
+      { category: "Złote Lata 80. - Italo Disco & Pop", query: "Samantha Fox Touch Me", title: "Touch Me (I Want Your Body) - Samantha Fox" },
+      { category: "Złote Lata 80. - Italo Disco & Pop", query: "Rick Astley Never Gonna Give You Up", title: "Never Gonna Give You Up - Rick Astley" },
+      { category: "Złote Lata 80. - Italo Disco & Pop", query: "Dead Or Alive You Spin Me Round", title: "You Spin Me Round (Like a Record) - Dead or Alive" },
+      { category: "Złote Lata 80. - Italo Disco & Pop", query: "Kylie Minogue The Loco-Motion", title: "The Loco-Motion - Kylie Minogue" },
+      { category: "Złote Lata 80. - Italo Disco & Pop", query: "Sandra Maria Magdalena", title: "Maria Magdalena - Sandra" },
+      { category: "Klasyka Jazzu i Swingu", query: "Frank Sinatra My Way", title: "My Way - Frank Sinatra" },
+      { category: "Klasyka Jazzu i Swingu", query: "Frank Sinatra Strangers In The Night", title: "Strangers in the Night - Frank Sinatra" },
+      { category: "Klasyka Jazzu i Swingu", query: "Frank Sinatra Fly Me To The Moon", title: "Fly Me to the Moon - Frank Sinatra" },
+      { category: "Klasyka Jazzu i Swingu", query: "Louis Armstrong What A Wonderful World", title: "What a Wonderful World - Louis Armstrong" },
+      { category: "Klasyka Jazzu i Swingu", query: "Louis Armstrong Hello Dolly", title: "Hello, Dolly! - Louis Armstrong" },
+      { category: "Klasyka Jazzu i Swingu", query: "Glenn Miller In The Mood", title: "In the Mood - Glenn Miller" },
+      { category: "Cygańskie i Biesiadne Hity", query: "Don Vasyl Ore Ore", title: "Ore, ore - Don Vasyl" },
+      { category: "Cygańskie i Biesiadne Hity", query: "Tercet Egzotyczny Pamelo zegnaj", title: "Pamelo, żegnaj - Tercet Egzotyczny" },
+      { category: "Cygańskie i Biesiadne Hity", query: "Krzysztof Krawczyk Gdy nam spiewal Elvis Presley", title: "Gdy nam śpiewał Elvis Presley - Krzysztof Krawczyk" },
+      { category: "Cygańskie i Biesiadne Hity", query: "Golec uOrkiestra Pędzą konie", title: "Pędzą konie - Golec uOrkiestra" },
+      { category: "Polskie Ballady Wszech Czasów", query: "Edyta Geppert Jaka roza taki ciern", title: "Jaka róża, taki cierń - Edyta Geppert" },
+      { category: "Polskie Ballady Wszech Czasów", query: "Edyta Geppert Och zycie kocham cie nad zycie", title: "Och, życie kocham cię nad życie - Edyta Geppert" },
+      { category: "Michal Bajor Nie chce wiecej", query: "Michal Bajor Nie chce wiecej", title: "Nie chcę więcej - Michał Bajor" },
+      { category: "Anna Maria Jopek Joszko Broda", query: "Anna Maria Jopek Joszko Broda", title: "Joszko Broda - Anna Maria Jopek" },
+      { category: "Stanisław Soyka Tolerancja", query: "Stanisław Soyka Tolerancja", title: "Tolerancja (Na miły Bóg) - Stanisław Soyka" },
+      { category: "Helena Vondráčková i Karel Gott", query: "Helena Vondrackova Malovany dzbanku", title: "Malovaný džbánku - Helena Vondráčková" },
+      { category: "Helena Vondráčková i Karel Gott", query: "Karel Gott Lady Carneval", title: "Lady Carneval - Karel Gott" },
+      { category: "Helena Vondráčková i Karel Gott", query: "Ivan Mladek Jozin z bazin", title: "Jožin z bažin - Ivan Mládek" },
+      { category: "Britney Spears i Pop 00.", query: "Britney Spears Baby One More Time", title: "...Baby One More Time - Britney Spears" },
+      { category: "Britney Spears i Pop 00.", query: "Britney Spears Oops I Did It Again", title: "Oops!... I Did It Again - Britney Spears" },
+      { category: "Britney Spears i Pop 00.", query: "Britney Spears Toxic", title: "Toxic - Britney Spears" },
+      { category: "Christina Aguilera Genie In A Bottle", query: "Christina Aguilera Genie In A Bottle", title: "Genie in a Bottle - Christina Aguilera" },
+      { category: "Britney Spears i Pop 00.", query: "Jennifer Lopez Lets Get Loud", title: "Let's Get Loud - Jennifer Lopez" },
+      { category: "Gwen Stefani Hollaback Girl", query: "Gwen Stefani Hollaback Girl", title: "Hollaback Girl - Gwen Stefani" },
+      { category: "The Kelly Family", query: "The Kelly Family An Angel", title: "An Angel - The Kelly Family" },
+      { category: "The Kelly Family", query: "The Kelly Family I Cant Help Myself", title: "I Can't Help Myself - The Kelly Family" },
+      { category: "The Kelly Family", query: "The Kelly Family Fell In Love With An Alien", title: "Fell In Love With An Alien - The Kelly Family" },
+      { category: "The Kelly Family", query: "The Kelly Family Nanana", title: "Nanana - The Kelly Family" },
+      { category: "Polska Muzyka Retro (Lata 30-50)", query: "Eugeniusz Bodo Umowilem sie z nia na dziewiata", title: "Umówiłem się z nią na dziewiątą - Eugeniusz Bodo" },
+      { category: "Polska Muzyka Retro (Lata 30-50)", query: "Eugeniusz Bodo Sex appeal", title: "Sex appeal - Eugeniusz Bodo" },
+      { category: "Polska Muzyka Retro (Lata 30-50)", query: "Mieczyslaw Fogg Ta ostatnia niedziela", title: "Ta ostatnia niedziela - Mieczysław Fogg" },
+      { category: "Polska Muzyka Retro (Lata 30-50)", query: "Mieczyslaw Fogg Jesienne roze", title: "Jesienne róże - Mieczysław Fogg" },
+      { category: "Hanka Ordonowna Milosc ci wszystko wybaczy", query: "Hanka Ordonowna Milosc ci wszystko wybaczy", title: "Miłość ci wszystko wybaczy - Hanka Ordonówna" },
+      { category: "Wielkie Duety Polskie", query: "Krzysztof Krawczyk Edyta Bartosiewicz Trudno tak", title: "Trudno tak (razem być ze sobą...) - Krzysztof Krawczyk & Edyta Bartosiewicz" },
+      { category: "Wielkie Duety Polskie", query: "Zdzislawa Sosnicka Zbigniew Wodecki Z Toba chce ogladac swiat", title: "Z Tobą chcę oglądać świat - Zdzisława Sośnicka & Zbigniew Wodecki" },
+      { category: "Wielkie Duety Polskie", query: "Krzysztof Kiljanski Kayah Procz标志 Ciebie nic", title: "Prócz Ciebie nic - Krzysztof Kiljański & Kayah" },
+      { category: "Wielkie Duety Polskie", query: "Felicjan Andrzejczak Jolka Jolka pamietasz", title: "Jolka, Jolka pamiętasz - Budka Suflera & Felicjan Andrzejczak" },
+      { category: "Piosenka Aktorska i Kabaret", query: "Michal Bajor Ogrzej mnie", title: "Ogrzej mnie - Michał Bajor" },
+      { category: "Piosenka Aktorska i Kabaret", query: "Andrzej Rosiewicz Najwiecej witaminy", title: "Najwięcej witaminy - Andrzej Rosiewicz" },
+      { category: "Piosenka Aktorska i Kabaret", query: "Andrzej Rosiewicz Chlopcy radarowcy", title: "Chłopcy radarowcy - Andrzej Rosiewicz" },
+      { category: "U2 i Giganci Rocka", query: "U2 With Or Without You", title: "With or Without You - U2" },
+      { category: "U2 i Giganci Rocka", query: "U2 Beautiful Day", title: "Beautiful Day - U2" },
+      { category: "U2 i Giganci Rocka", query: "Aerosmith I Dont Want To Miss A Thing", title: "I Don't Want to Miss a Thing - Aerosmith" },
+      { category: "U2 i Giganci Rocka", query: "Aerosmith Crazy", title: "Crazy - Aerosmith" },
+      { category: "U2 i Giganci Rocka", query: "The Rolling Stones Satisfaction", title: "(I Can't Get No) Satisfaction - The Rolling Stones" },
+      { category: "U2 i Giganci Rocka", query: "The Rolling Stones Start Me Up", title: "Start Me Up - The Rolling Stones" },
+      { category: "Polskie Hity 2010-2020", query: "Sarsa Naucz mnie", title: "Naucz mnie - Sarsa" },
+      { category: "Polskie Hity 2010-2020", query: "Ewelina Lisowska W strone slonca", title: "W stronę słońca - Ewelina Lisowska" },
+      { category: "Polskie Hity 2010-2020", query: "LemON Napraw", title: "Napraw - LemON" },
+      { category: "Polskie Hity 2010-2020", query: "Igor Herbut Wkreceni", title: "Wkręceni - Nie ufaj mi - Igor Herbut" },
+      { category: "Polskie Hity 2010-2020", query: "Grzegorz Hyzy Na chwile", title: "Na chwilę - Grzegorz Hyży & TABB" },
+      { category: "Budka Suflera - Ukryte Perły", query: "Budka Suflera Czas olowiu", title: "Czas ołowiu - Budka Suflera" },
+      { category: "Budka Suflera - Ukryte Perły", query: "Budka Suflera Twoje radio", title: "Twoje radio - Budka Suflera" },
+      { category: "Budka Suflera - Ukryte Perły", query: "Budka Suflera Jest taki samotny dom", title: "Jest taki samotny dom - Budka Suflera" },
+      { category: "Budka Suflera - Ukryte Perły", query: "Budka Suflera Znowu w zyciu mi nie wyszlo", title: "Znowu w życiu mi nie wyszło - Budka Suflera" },
+      { category: "Budka Suflera - Ukryte Perły", query: "Budka Suflera Nie wierz nigdy kobiecie", title: "Nie wierz nigdy kobiecie - Budka Suflera" },
+      { category: "Dwa Plus Jeden (2+1)", query: "Dwa Plus Jeden Chodz pomaluj moj swiat", title: "Chodź, pomaluj mój świat - 2+1" },
+      { category: "Dwa Plus Jeden (2+1)", query: "Dwa Plus Jeden Winda do nieba", title: "Winda do nieba - 2+1" },
+      { category: "Dwa Plus Jeden (2+1)", query: "Dwa Plus Jeden Isc w strone slonca", title: "Iść w stronę słońca - 2+1" },
+      { category: "Dwa Plus Jeden (2+1)", query: "Dwa Plus Jeden Requiem dla samej siebie", title: "Requiem dla samej siebie - 2+1" },
+      { category: "Kasia Sobczyk i Karin Stanek", query: "Kasia Sobczyk O mnie sie nie martw", title: "O mnie się nie martw - Kasia Sobczyk" },
+      { category: "Kasia Sobczyk i Karin Stanek", query: "Karin Stanek Jedziemy autostopem", title: "Jedziemy autostopem - Karin Stanek" },
+      { category: "Kasia Sobczyk i Karin Stanek", query: "Kasia Sobczyk Nie badz taki szybki Bill", title: "Nie bądź taki szybki Bill - Kasia Sobczyk" },
+      { category: "Kasia Sobczyk i Karin Stanek", query: "Karin Stanek Malowana lala", title: "Malowana lala - Karin Stanek" },
+      { category: "Trubadurzy i Czerwono-Czarni", query: "Trubadurzy Znamy sie tylko z widzenia", title: "Znamy się tylko z widzenia - Trubadurzy" },
+      { category: "Trubadurzy i Czerwono-Czarni", query: "Trubadurzy Przyjedz mamo na przysiege", title: "Przyjedź mamo na przysięgę - Trubadurzy" },
+      { category: "Trubadurzy i Czerwono-Czarni", query: "Trubadurzy Coz wiemy o milosci", title: "Cóż wiemy o miłości - Trubadurzy" },
+      { category: "Andrzej Rybiński i Bogusław Mec", query: "Andrzej Rybinski Nie licze godzin i lat", title: "Nie liczę godzin i lat - Andrzej Rybiński" },
+      { category: "Andrzej Rybiński i Bogusław Mec", query: "Andrzej Rybinski Pocieszanka", title: "Pocieszanka - Andrzej Rybiński" },
+      { category: "Boguslaw Mec Jej portret", query: "Boguslaw Mec Jej portret", title: "Jej portret - Bogusław Mec" },
+      { category: "Danuta Rinn i Halina Kunicka", query: "Danuta Rinn Gdzie ci mezczyzni", title: "Gdzie ci mężczyźni - Danuta Rinn" },
+      { category: "Danuta Rinn i Halina Kunicka", query: "Danuta Rinn Tyle wdzieku", title: "Tyle wdzięku - Danuta Rinn" },
+      { category: "Halina Kunicka Od nocy do nocy", query: "Halina Kunicka Od nocy do nocy", title: "Od nocy do nocy - Halina Kunicka" },
+      { category: "Alibabki i Filipinki", query: "Alibabki Kwiat jednej nocy", title: "Kwiat jednej nocy - Alibabki" },
+      { category: "Filipinki Batumi", query: "Filipinki Batumi", title: "Batumi - Filipinki" },
+      { category: "Filipinki Wala twist", query: "Filipinki Wala twist", title: "Wala twist - Filipinki" },
+      { category: "Varius Manx i De Mono - Złote Przeboje", query: "Varius Manx Piosenka ksiezycowa", title: "Piosenka księżycowa - Varius Manx" },
+      { category: "Varius Manx i De Mono - Złote Przeboje", query: "Varius Manx Ruchome piaski", title: "Ruchome piaski - Varius Manx" },
+      { category: "Varius Manx i De Mono - Złote Przeboje", query: "Varius Manx Pocaluj noc", title: "Pocałuj noc - Varius Manx" },
+      { category: "De Mono Kochac inaczej", query: "De Mono Kochac inaczej", title: "Kochać inaczej - De Mono" },
+      { category: "De Mono Poki na to czas", query: "De Mono Poki na to czas", title: "Póki na to czas - De Mono" },
+      { category: "Varius Manx i De Mono - Złote Przeboje", query: "Varius Manx Maj", title: "Maj - Varius Manx" },
+      { category: "Phil Collins i Genesis", query: "Phil Collins Another Day In Paradise", title: "Another Day in Paradise - Phil Collins" },
+      { category: "Phil Collins i Genesis", query: "Phil Collins In The Air Tonight", title: "In the Air Tonight - Phil Collins" },
+      { category: "Phil Collins i Genesis", query: "Phil Collins You Cant Hurry Love", title: "You Can't Hurry Love - Phil Collins" },
+      { category: "Genesis I Cant Dance", query: "Genesis I Cant Dance", title: "I Can't Dance - Genesis" },
+      { category: "Genesis Jesus He Knows Me", query: "Genesis Jesus He Knows Me", title: "Jesus He Knows Me - Genesis" },
+      { category: "Phil Collins Against All Odds", query: "Phil Collins Against All Odds", title: "Against All Odds - Phil Collins" },
+      { category: "Scorpions i Ballady Rockowe", query: "Scorpions Wind Of Change", title: "Wind of Change - Scorpions" },
+      { category: "Scorpions i Ballady Rockowe", query: "Scorpions Send Me An Angel", title: "Send Me an Angel - Scorpions" },
+      { category: "Scorpions i Ballady Rockowe", query: "Scorpions Still Loving You", title: "Still Loving You - Scorpions" },
+      { category: "Europe Carrie", query: "Europe Carrie", title: "Carrie - Europe" },
+      { category: "Mr Big To Be With You", query: "Mr Big To Be With You", title: "To Be with You - Mr. Big" },
+      { category: "Klasyka Italo Disco i Synth Popu", query: "Gazebo I Like Chopin", title: "I Like Chopin - Gazebo" },
+      { category: "Ryan Paris Dolce Vita", query: "Ryan Paris Dolce Vita", title: "Dolce Vita - Ryan Paris" },
+      { category: "Baltimora Tarzan Boy", query: "Baltimora Tarzan Boy", title: "Tarzan Boy - Baltimora" },
+      { category: "Laura Branigan Self Control", query: "Laura Branigan Self Control", title: "Self Control - Laura Branigan" },
+      { category: "Savage Only You", query: "Savage Only You", title: "Only You - Savage" },
+      { category: "Wielkie Hity Lat 80. na Świecie", query: "Nena 99 Luftballons", title: "99 Luftballons - Nena" },
+      { category: "Kim Wilde Kids In America", query: "Kim Wilde Kids In America", title: "Kids in America - Kim Wilde" },
+      { category: "Belinda Carlisle Heaven Is A Place On Earth", query: "Belinda Carlisle Heaven Is A Place On Earth", title: "Heaven is a Place on Earth - Belinda Carlisle" },
+      { category: "Starship Nothings Gonna Stop Us Now", query: "Starship Nothings Gonna Stop Us Now", title: "Nothing's Gonna Stop Us Now - Starship" },
+      { category: "Irene Cara Flashdance What A Feeling", query: "Irene Cara Flashdance What A Feeling", title: "Flashdance... What a Feeling - Irene Cara" },
+      { category: "Szanty i Piosenka Żeglarska", query: "Ryczace Dwudziestki Hiszpanskie dziewczyny", title: "Hiszpańskie dziewczyny - Ryczące Dwudziestki" },
+      { category: "EKT Gdynia Morze moje morze", query: "EKT Gdynia Morze moje morze", title: "Morze, moje morze - EKT Gdynia" },
+      { category: "Hity Eurowizji", query: "Loreen Euphoria", title: "Euphoria - Loreen" },
+      { category: "Alexander Rybak Fairytale", query: "Alexander Rybak Fairytale", title: "Fairytale - Alexander Rybak" },
+      { category: "Mans Zelmerlow Heroes", query: "Mans Zelmerlow Heroes", title: "Heroes - Måns Zelmerlöw" },
+      { category: "Netta Toy", query: "Netta Toy", title: "Toy - Netta" },
+      { category: "Conchita Wurst Rise Like A Phoenix", query: "Conchita Wurst Rise Like A Phoenix", title: "Rise Like a Phoenix - Conchita Wurst" },
+      { category: "Deep Purple Smoke On The Water", query: "Deep Purple Smoke On The Water", title: "Smoke on the Water - Deep Purple" },
+      { category: "Led Zeppelin Stairway To Heaven", query: "Led Zeppelin Stairway To Heaven", title: "Stairway to Heaven - Led Zeppelin" },
+      { category: "The Eagles Hotel California", query: "The Eagles Hotel California", title: "Hotel California - Eagles" },
+      { category: "Dire Straits Sultans Of Swing", query: "Dire Straits Sultans Of Swing", title: "Sultans of Swing - Dire Straits" },
+      { category: "Pink Floyd Another Brick In The Wall", query: "Pink Floyd Another Brick In The Wall", title: "Another Brick in the Wall, Pt. 2 - Pink Floyd" },
+      { category: "Polskie Przeboje Lat 70.", query: "Andrzej Dabrowski Do zakochania jeden krok", title: "Do zakochania jeden krok - Andrzej Dąbrowski" },
+      { category: "Wojciech Gassowski Zielone wzgorza nad Solina", query: "Wojciech Gassowski Zielone wzgorza nad Solina", title: "Zielone wzgórza nad Soliną - Wojciech Gąssowski" },
+      { category: "Partita Pytasz mnie co ci dam", query: "Partita Pytasz mnie co ci dam", title: "Pytasz mnie, co Ci dam - Partita" },
+      { category: "Legendy Muzyki R&B", query: "TLC Waterfalls", title: "Waterfalls - TLC" },
+      { category: "Destinys Child Say My Name", query: "Destinys Child Say My Name", title: "Say My Name - Destiny's Child" },
+      { category: "Alicia Keys Fallin", query: "Alicia Keys Fallin", title: "Fallin' - Alicia Keys" },
+      { category: "Beyonce Crazy In Love", query: "Beyonce Crazy In Love", title: "Crazy in Love - Beyoncé" },
+      { category: "The Fugees Killing Me Softly", query: "The Fugees Killing Me Softly", title: "Killing Me Softly - The Fugees" },
+      { category: "Najnowsze Hity Światowe (2020-2026)", query: "Sabrina Carpenter Espresso", title: "Espresso - Sabrina Carpenter" },
+      { category: "Benson Boone Beautiful Things", query: "Benson Boone Beautiful Things", title: "Beautiful Things - Benson Boone" },
+      { category: "Dua Lipa Dance The Night", query: "Dua Lipa Dance The Night", title: "Dance The Night - Dua Lipa" },
+      { category: "The Weeknd Save Your Tears", query: "The Weeknd Save Your Tears", title: "Save Your Tears - The Weeknd" },
+      { category: "Taylor Swift Anti Hero", query: "Taylor Swift Anti Hero", title: "Anti-Hero - Taylor Swift" },
+      { category: "Harry Styles Watermelon Sugar", query: "Harry Styles Watermelon Sugar", title: "Watermelon Sugar - Harry Styles" },
+      { category: "Radiowe Przeboje Ostatnich Lat", query: "Tones And I Dance Monkey", title: "Dance Monkey - Tones And I" },
+      { category: "Coldplay A Sky Full Of Stars", query: "Coldplay A Sky Full Of Stars", title: "A Sky Full of Stars - Coldplay" },
+      { category: "Imagine Dragons Thunder", query: "Imagine Dragons Thunder", title: "Thunder - Imagine Dragons" },
+      { category: "David Guetta Im Good Blue", query: "David Guetta Im Good Blue", title: "I'm Good (Blue) - David Guetta & Bebe Rexha" },
+      { category: "Glass Animals Heat Waves", query: "Glass Animals Heat Waves", title: "Heat Waves - Glass Animals" },
+      { category: "Nowy Pop Polski", query: "Kaśka Sochacka Niebo bylo rozowe", title: "Niebo było różowe - Kaśka Sochacka" },
+      { category: "Vito Bambino Etna", query: "Vito Bambino Etna", title: "Etna - Vito Bambino" },
+      { category: "Sanah Nic dwa razy", query: "Sanah Nic dwa razy", title: "Nic dwa razy - sanah" },
+      { category: "Kwiat Jabloni Moglo byc nic", query: "Kwiat Jabloni Moglo byc nic", title: "Mogło być nic - Kwiat Jabłoni" },
+      { category: "Mrozu Szerokie wody", query: "Mrozu Szerokie wody", title: "Szerokie wody - Mrozu" },
+      { category: "Dawid Podsiadlo Mori", query: "Dawid Podsiadlo Mori", title: "Mori - Dawid Podsiadło" },
+      { category: "Wielkie Hity Lat 90.", query: "No Doubt Dont Speak", title: "Don't Speak - No Doubt" },
+      { category: "Red Hot Chili Peppers Californication", query: "Red Hot Chili Peppers Californication", title: "Californication - Red Hot Chili Peppers" },
+      { category: "REM Losing My Religion", query: "REM Losing My Religion", title: "Losing My Religion - R.E.M." },
+      { category: "Oasis Wonderwall", query: "Oasis Wonderwall", title: "Wonderwall - Oasis" },
+      { category: "Fugees Ready Or Not", query: "Fugees Ready Or Not", title: "Ready or Not - The Fugees" },
+      { category: "Polskie Hity Serialowe", query: "Ryszard Rynkowski Zycie jest nowela", title: "Życie jest nowelą - Ryszard Rynkowski" },
+      { category: "Anna Jurksztowicz Na dobre i na zle", query: "Anna Jurksztowicz Na dobre i na zle", title: "Na dobre i na złe - Anna Jurksztowicz" },
+      { category: "Big Cyc Swiat wedlug Kiepskich", query: "Big Cyc Swiat wedlug Kiepskich", title: "Świat według Kiepskich - Big Cyc" },
+      { category: "Złota Era Dance i Eurodance", query: "Gala Freed From Desire", title: "Freed from Desire - Gala" },
+      { category: "Snap Rhythm Is A Dancer", query: "Snap Rhythm Is A Dancer", title: "Rhythm Is a Dancer - Snap!" },
+      { category: "Mr President Coco Jambo", query: "Mr President Coco Jambo", title: "Coco Jamboo - Mr. President" },
+      { category: "Loona Bailando", query: "Loona Bailando", title: "Bailando - Loona" },
+      { category: "Corona The Rhythm of the Night", query: "Corona The Rhythm of the Night", title: "The Rhythm of the Night - Corona" },
+      { category: "Muzyka Latynoska - Hity", query: "Enrique Iglesias Bailamos", title: "Bailamos - Enrique Iglesias" },
+      { category: "Michel Telo Ai Se Eu Te Pego", query: "Michel Telo Ai Se Eu Te Pego", title: "Ai Se Eu Te Pego - Michel Teló" },
+      { category: "Juanes La Camisa Negra", query: "Juanes La Camisa Negra", title: "La Camisa Negra - Juanes" },
+      { category: "Gusttavo Lima Balada", query: "Gusttavo Lima Balada", title: "Balada - Gusttavo Lima" },
+      { category: "Polski Pop Lat 2000.", query: "Goya Smak slow", title: "Smak słów - Goya" },
+      { category: "Sistars Sutra", query: "Sistars Sutra", title: "Sutra - Sistars" },
+      { category: "Brodka Ten", query: "Brodka Ten", title: "Ten - Brodka" },
+      { category: "Raz Dwa Trzy Trudno nie wierzyc w nic", query: "Raz Dwa Trzy Trudno nie wierzyc w nic", title: "Trudno nie wierzyć w nic - Raz, Dwa, Trzy" },
+      { category: "Klasyka Polskiego Rocka", query: "Rezerwat Zaopiekuj sie mna", title: "Zaopiekuj się mną - Rezerwat" },
+      { category: "Tilt Jeszcze bedzie przepieknie", query: "Tilt Jeszcze bedzie przepieknie", title: "Jeszcze będzie przepięknie - Tilt" },
+      { category: "Mr Zoob Moj jest ten kawalek podlogi", query: "Mr Zoob Moj jest ten kawalek podlogi", title: "Mój jest ten kawałek podłogi - Mr. Zoob" },
+      { category: "Chlopcy z Placu Broni Kocham Cie", query: "Chlopcy z Placu Broni Kocham Cie", title: "Kocham Cię - Chłopcy z Placu Broni" },
+      { category: "Lady Pank Minus dziesiec w cenie", query: "Lady Pank Minus dziesiec w cenie", title: "Minus dziesięć w cenie - Lady Pank" },
+      { category: "Maanam Parada sloni", query: "Maanam Parada sloni", title: "Parada słoni i róża - Maanam" },
+      { category: "Europejskie Przeboje", query: "In Grid Tu es foutu", title: "Tu es foutu - In-Grid" },
+      { category: "The Art Company Susanna", query: "The Art Company Susanna", title: "Susanna - The Art Company" },
+      { category: "Raffaella Carra A far l amore comincia tu", query: "Raffaella Carra A far l amore comincia tu", title: "A far l'amore comincia tu - Raffaella Carrà" },
+      { category: "Los Lobos La Bamba", query: "Los Lobos La Bamba", title: "La Bamba - Los Lobos" },
+      { category: "Współczesne Polskie Hity", query: "Kortez Hej Wy", title: "Hej Wy - Kortez" },
+      { category: "Krzysztof Zalewski Milosc Milosc", query: "Krzysztof Zalewski Milosc Milosc", title: "Miłość Miłość - Krzysztof Zalewski" },
+      { category: "Igo Helena", query: "Igo Helena", title: "Helena - Igo" },
+      { category: "Smolasty Duze Oczy", query: "Smolasty Duze Oczy", title: "Duże oczy - Smolasty" },
+      { category: "Polskie Przeboje Lat 80.", query: "Bolter Daj mi te noc", title: "Daj mi tę noc - Bolter" },
+      { category: "Kombi Kochac cie za pozno", query: "Kombi Kochac cie za pozno", title: "Kochać cię - za późno - Kombi" },
+      { category: "Lombard Golebi puch", query: "Lombard Golebi puch", title: "Gołębi puch - Lombard" },
+      { category: "Kapitan Nemo Twoja Lorelei", query: "Kapitan Nemo Twoja Lorelei", title: "Twoja Lorelei - Kapitan Nemo" },
+      { category: "Krystyna Pronko Psalm stojacych w kolejce", query: "Krystyna Pronko Psalm stojacych w kolejce", title: "Psalm stojących w kolejce - Krystyna Prońko" },
+      { category: "Felicjan Andrzejczak Noc komety", query: "Felicjan Andrzejczak Noc komety", title: "Noc komety - Budka Suflera & Felicjan Andrzejczak" },
+      { category: "Wielkie Głosy XX Wieku", query: "Frank Sinatra New York New York", title: "Theme from New York, New York - Frank Sinatra" },
+      { category: "Roy Orbison Oh Pretty Woman", query: "Roy Orbison Oh Pretty Woman", title: "Oh, Pretty Woman - Roy Orbison" },
+      { category: "Shirley Bassey Diamonds Are Forever", query: "Shirley Bassey Diamonds Are Forever", title: "Diamonds Are Forever - Shirley Bassey" },
+      { category: "Paul Anka Diana", query: "Paul Anka Diana", title: "Diana - Paul Anka" },
+      { category: "Dean Martin Thats Amore", query: "Dean Martin Thats Amore", title: "That's Amore - Dean Martin" },
+      { category: "Polski Hip-Hop Klasyka", query: "Paktofonika Jestem Bogiem", title: "Jestem Bogiem - Paktofonika" },
+      { category: "Paktofonika Chwile ulotne", query: "Paktofonika Chwile ulotne", title: "Chwile ulotne - Paktofonika" },
+      { category: "Kaliber 44 Normalnie o tej porze", query: "Kaliber 44 Normalnie o tej porze", title: "Normalnie o tej porze - Kaliber 44" },
+      { category: "Liroy Scyzoryk", query: "Liroy Scyzoryk", title: "Scyzoryk - Liroy" },
+      { category: "WWO Kazdy ponad kazdym", query: "WWO Kazdy ponad kazdym", title: "Każdy ponad każdym - WWO" },
+      { category: "Ikony Popu Lat 80.", query: "Michael Jackson The Way You Make Me Feel", title: "The Way You Make Me Feel - Michael Jackson" },
+      { category: "Michael Jackson Man In The Mirror", query: "Michael Jackson Man In The Mirror", title: "Man in the Mirror - Michael Jackson" },
+      { category: "Madonna Papa Dont Preach", query: "Madonna Papa Dont Preach", title: "Papa Don't Preach - Madonna" },
+      { category: "Whitney Houston Im Every Woman", query: "Whitney Houston Im Every Woman", title: "I'm Every Woman - Whitney Houston" },
+      { category: "Kylie Minogue I Should Be So Lucky", query: "Kylie Minogue I Should Be So Lucky", title: "I Should Be so Lucky - Kylie Minogue" },
+      { category: "Współczesne Hity Radiowe (Polska)", query: "Brodka Granda", title: "Granda - Brodka" },
+      { category: "Organek Glupi ja", query: "Organek Glupi ja", title: "Głupi ja - Ørganek" },
+      { category: "Daria Zawialow Malinowy Chrusniak", query: "Daria Zawialow Malinowy Chrusniak", title: "Malinowy Chruśniak - Daria Zawiałow" },
+      { category: "Mrozu Nic do stracenia", query: "Mrozu Nic do stracenia", title: "Nic do stracenia - Mrozu" },
+      { category: "Cleo Lowcy gwiazd", query: "Cleo Lowcy gwiazd", title: "Łowcy gwiazd - Cleo" },
+      { category: "Donatan Cleo My Slowianie", query: "Donatan Cleo My Slowianie", title: "My Słowianie - Donatan & Cleo" },
+      { category: "Cleo Za krokiem krok", query: "Cleo Za krokiem krok", title: "Za krokiem krok - Cleo" },
+      { category: "Britpop i Alternatywa Lat 90.", query: "Blur Song 2", title: "Song 2 - Blur" },
+      { category: "The Verve Bitter Sweet Symphony", query: "The Verve Bitter Sweet Symphony", title: "Bitter Sweet Symphony - The Verve" },
+      { category: "Radiohead Creep", query: "Radiohead Creep", title: "Creep - Radiohead" },
+      { category: "The Cranberries Zombie", query: "The Cranberries Zombie", title: "Zombie - The Cranberries" },
+      { category: "Roxette Joyride", query: "Roxette Joyride", title: "Joyride - Roxette" },
+      { category: "Polska Scena - Big Beat", query: "Czerwone Gitary Plona gory plona lasy", title: "Płoną góry, płoną lasy - Czerwone Gitary" },
+      { category: "Happy End Jak sie masz kochanie", query: "Happy End Jak sie masz kochanie", title: "Jak się masz kochanie - Happy End" },
+      { category: "Majka Jeżowska i Piosenki Dziecięce", query: "Majka Jezowska A ja wole moja mame", title: "A ja wolę moją mamę - Majka Jeżowska" },
+      { category: "Majka Jezowska Wszystkie dzieci nasze sa", query: "Majka Jezowska Wszystkie dzieci nasze sa", title: "Wszystkie dzieci nasze są - Majka Jeżowska" },
+      { category: "Majka Jezowska Najpiekniejsza w klasie", query: "Majka Jezowska Najpiekniejsza w klasie", title: "Najpiękniejsza w klasie - Majka标志 Jeżowska" },
+      { category: "Fasolki Mydlo lubi zabawe", query: "Fasolki Mydlo lubi zabawe", title: "Mydło lubi zabawę - Fasolki" },
+      { category: "Fasolki Fantazja", query: "Fasolki Fantazja", title: "Fantazja - Fasolki" },
+      { category: "Myslovitz i Happysad", query: "Myslovitz Dlugosc dzwieku samotnosci", title: "Długość dźwięku samotności - Myslovitz" },
+      { category: "Myslovitz Scenariusz dla moich sasiadow", query: "Myslovitz Scenariusz dla moich sasiadow", title: "Scenariusz dla moich sąsiadów - Myslovitz" },
+      { category: "Myslovitz Chlopcy", query: "Myslovitz Chlopcy", title: "Chłopcy - Myslovitz" },
+      { category: "Happysad Zanim pojde", query: "Happysad Zanim pojde", title: "Zanim pójdę - Happysad" },
+      { category: "Happysad Lydka", query: "Happysad Lydka", title: "Łydka - Happysad" },
+      { category: "Bad Boys Blue & C.C. Catch", query: "Bad Boys Blue Youre A Woman", title: "You're a Woman - Bad Boys Blue" },
+      { category: "Bad Boys Blue Pretty Young Girl", query: "Bad Boys Blue Pretty Young Girl", title: "Pretty Young Girl - Bad Boys Blue" },
+      { category: "CC Catch Cause You Are Young", query: "CC Catch Cause You Are Young", title: "'Cause You Are Young - C.C. Catch" },
+      { category: "CC Catch I Can Lose My Heart Tonight", query: "CC Catch I Can Lose My Heart Tonight", title: "I Can Lose My Heart Tonight - C.C. Catch" },
+      { category: "Fancy Flames Of Love", query: "Fancy Flames Of Love", title: "Flames of Love - Fancy" },
+      { category: "FR David Words", query: "FR David Words", title: "Words - F.R. David" },
+      { category: "Bryan Adams i Joe Cocker", query: "Bryan Adams Everything I Do I Do It For You", title: "(Everything I Do) I Do It For You - Bryan Adams" },
+      { category: "Bryan Adams Summer of 69", query: "Bryan Adams Summer of 69", title: "Summer of '69 - Bryan Adams" },
+      { category: "Bryan Adams Heaven", query: "Bryan Adams Heaven", title: "Heaven - Bryan Adams" },
+      { category: "Joe Cocker You Can Leave Your Hat On", query: "Joe Cocker You Can Leave Your Hat On", title: "You Can Leave Your Hat On - Joe Cocker" },
+      { category: "Joe Cocker Up Where We Belong", query: "Joe Cocker Up Where We Belong", title: "Up Where We Belong - Joe Cocker & Jennifer Warnes" },
+      { category: "Joe Cocker Unchain My Heart", query: "Joe Cocker Unchain My Heart", title: "Unchain My Heart - Joe Cocker" },
+      { category: "Wojciech Młynarski - Klasyka", query: "Wojciech Mlynarski Jestesmy na wczasach", title: "Jesteśmy na wczasach - Wojciech Młynarski" },
+      { category: "Wojciech Mlynarski Robmy swoje", query: "Wojciech Mlynarski Robmy swoje", title: "Róbmy swoje - Wojciech Młynarski" },
+      { category: "Wojciech Mlynarski Dziewczyny badzcie dla nas dobre na wiosne", query: "Wojciech Mlynarski Dziewczyny badzcie dla nas dobre na wiosne", title: "Dziewczyny bądźcie dla nas dobre na wiosnę - Wojciech Młynarski" },
+      { category: "Wojciech Mlynarski Absolutnie", query: "Wojciech Mlynarski Absolutnie", title: "Absolutnie - Wojciech Młynarski" },
+      { category: "Lionel Richie i Stevie Wonder - Ballady", query: "Lionel Richie Hello", title: "Hello - Lionel Richie" },
+      { category: "Lionel Richie All Night Long", query: "Lionel Richie All Night Long", title: "All Night Long (All Night) - Lionel Richie" },
+      { category: "Lionel Richie Endless Love", query: "Lionel Richie Endless Love", title: "Endless Love - Lionel Richie & Diana Ross" },
+      { category: "Stevie Wonder Part Time Lover", query: "Stevie Wonder Part Time Lover", title: "Part-Time Lover - Stevie Wonder" },
+      { category: "Edith Piaf i Klasyka Francuska", query: "Edith Piaf La Vie En Rose", title: "La vie en rose - Édith Piaf" },
+      { category: "Edith Piaf Milord", query: "Edith Piaf Milord", title: "Milord - Édith Piaf" },
+      { category: "Charles Aznavour La Boheme", query: "Charles Aznavour La Boheme", title: "La bohème - Charles Aznavour" },
+      { category: "Mireille Mathieu Une femme en amour", query: "Mireille Mathieu Une femme en amour", title: "Une femme amoureuse - Mireille Mathieu" },
+      { category: "Instrumentalne Zagadki", query: "Jean Michel Jarre Oxygene 4", title: "Oxygene 4 - Jean-Michel Jarre" },
+      { category: "Vangelis Chariots of Fire", query: "Vangelis Chariots of Fire", title: "Chariots of Fire - Vangelis" },
+      { category: "Vangelis Conquest of Paradise", query: "Vangelis Conquest of Paradise", title: "Conquest of Paradise - Vangelis" },
+      { category: "Kenny G Songbird", query: "Kenny G Songbird", title: "Songbird - Kenny G" },
+      { category: "Vanessa Mae Storm", query: "Vanessa Mae Storm", title: "Storm - Vanessa-Mae" },
+      { category: "Grupa VOX i Wały Jagiellońskie", query: "VOX Bananowy song", title: "Bananowy song - VOX" },
+      { category: "Waly Jagiellonskie Corka rybaka", query: "Waly Jagiellonskie Corka rybaka", title: "Córka rybaka - Wały Jagiellońskie" },
+      { category: "Waly Jagiellonskie Wars wita was", query: "Waly Jagiellonskie Wars wita was", title: "Wars wita was - Wały Jagiellońskie" },
+      { category: "Smokie, Baccara i Hity Lat 70.", query: "Smokie Living Next Door to Alice", title: "Living Next Door to Alice - Smokie" },
+      { category: "Smokie Ill Meet You at Midnight", query: "Smokie Ill Meet You at Midnight", title: "I'll Meet You at Midnight - Smokie" },
+      { category: "Suzi Quatro Stumblin In", query: "Suzi Quatro Stumblin In", title: "Stumblin' In - Chris Norman & Suzi Quatro" },
+      { category: "Baccara Yes Sir I Can Boogie", query: "Baccara Yes Sir I Can Boogie", title: "Yes Sir, I Can Boogie - Baccara" },
+      { category: "Baccara Sorry Im A Lady", query: "Baccara Sorry Im A Lady", title: "Sorry, I'm a Lady - Baccara" },
+      { category: "Eruption One Way Ticket", query: "Eruption One Way Ticket", title: "One Way Ticket - Eruption" },
+      { category: "Polski Pop Lat 2000 (Wokalistki)", query: "Ewelina Flinta Zaluje", title: "Żałuję - Ewelina Flinta" },
+      { category: "Patrycja Markowska Swiat sie pomylil", query: "Patrycja Markowska Swiat sie pomylil", title: "Świat się pomylił - Patrycja Markowska" },
+      { category: "Ania Dabrowska Tego chcialam", query: "Ania Dabrowska Tego chcialam", title: "Tego chciałam - Ania Dąbrowska" },
+      { category: "Ania Dabrowska Z Toba nie umiem wygrac", query: "Ania Dabrowska Z Toba nie umiem wygrac", title: "Z Tobą nie umiem wygrać - Ania Dąbrowska" },
+      { category: "Fiesta Latina i Cygańskie Gitary", query: "Lou Bega Mambo No 5", title: "Mambo No. 5 - Lou Bega" },
+      { category: "Las Ketchup The Ketchup Song", query: "Las Ketchup The Ketchup Song", title: "The Ketchup Song (Aserejé) - Las Ketchup" },
+      { category: "Gipsy Kings Volare", query: "Gipsy Kings Volare", title: "Volare - Gipsy Kings" },
+      { category: "Gipsy Kings Bamboleo", query: "Gipsy Kings Bamboleo", title: "Bamboléo - Gipsy Kings" },
+      { category: "Bellini Samba de Janeiro", query: "Bellini Samba de Janeiro", title: "Samba de Janeiro - Bellini" },
+      { category: "Gwiazdy Muzyki Tanecznej", query: "Shazza Bierz co chcesz", title: "Bierz co chcesz - Shazza" },
+      { category: "Shazza Baiao Bongo", query: "Shazza Baiao Bongo", title: "Baiao bongo - Shazza" },
+      { category: "After Party Tylko ona jedyna", query: "After Party Tylko ona jedyna", title: "Tylko ona jedyna - After Party" },
+      { category: "Piekni i Mlodzi Niewiara", query: "Piekni i Mlodzi Niewiara", title: "Niewiara - Piękni i Młodzi" },
+      { category: "Playboys Lejde", query: "Playboys Lejde", title: "Lejde - Playboys" },
+      { category: "Klasyka Biesiady i Ogniska", query: "Krzysztof Krawczyk Hej Sokoly", title: "Hej, sokoły! - Krzysztof Krawczyk" },
+      { category: "Slask Szla dzieweczka do laseczka", query: "Slask Szla dzieweczka do laseczka", title: "Szła dzieweczka do laseczka - Zespół Śląsk" },
+      { category: "Klasyczne Festiwale: Sanremo i Francja", query: "Domenico Modugno Volare", title: "Volare - Domenico Modugno" },
+      { category: "Riccardo Fogli Storie di tutti i giorni", query: "Riccardo Fogli Storie di tutti i giorni", title: "Storie di tutti i giorni - Riccardo Fogli" },
+      { category: "Gigliola Cinquetti Non ho l eta", query: "Gigliola Cinquetti Non ho l eta", title: "Non ho l'età - Gigliola Cinquetti" },
+      { category: "Desireless Voyage Voyage", query: "Desireless Voyage Voyage", title: "Voyage Voyage - Desireless" },
+      { category: "Zaz Je veux", query: "Zaz Je veux", title: "Je veux - ZAZ" },
+      { category: "Celine Dion Pour que tu maimes encore", query: "Celine Dion Pour que tu maimes encore", title: "Pour que tu m’aimes encore - Celine Dion" },
+      { category: "Musicale i Spektakle", query: "Katarzyna Groniec Szyba", title: "Szyba - Katarzyna Groniec" },
+      { category: "Andrew Lloyd Webber The Phantom of the Opera", query: "Andrew Lloyd Webber The Phantom of the Opera", title: "The Phantom of the Opera - Andrew Lloyd Webber" },
+      { category: "Liza Minnelli Cabaret", query: "Liza Minnelli Cabaret", title: "Cabaret - Liza Minnelli" },
+      { category: "John Travolta Summer Nights", query: "John Travolta Summer Nights", title: "Summer Nights - John Travolta & Olivia Newton-John" },
+      { category: "Elaine Paige Memory", query: "Elaine Paige Memory", title: "Memory - Elaine Paige" },
+      { category: "Współczesny Polski Rap i Trap", query: "Taconafide Tamagotchi", title: "Tamagotchi - TACONAFIDE" },
+      { category: "Mata Schodki", query: "Mata Schodki", title: "Schodki - Mata" },
+      { category: "Kizo Disney", query: "Kizo Disney", title: "Disney - Kizo" },
+      { category: "Sobel Fiolkowe Pole", query: "Sobel Fiolkowe Pole", title: "Fiołkowe pole - Sobel" },
+      { category: "Eurodance i Przeboje Klubowe", query: "Culture Beat Mr Vain", title: "Mr. Vain - Culture Beat" },
+      { category: "2 Unlimited No Limit", query: "2 Unlimited No Limit", title: "No Limit - 2 Unlimited" },
+      { category: "Captain Jack Captain Jack", query: "Captain Jack Captain Jack", title: "Captain Jack - Captain Jack" },
+      { category: "DJ Bobo Chihuahua", query: "DJ Bobo Chihuahua", title: "Chihuahua - DJ BoBo" },
+      { category: "Aqua Barbie Girl", query: "Aqua Barbie Girl", title: "Barbie Girl - Aqua" },
+      { category: "O Zone Dragostea Din Tei", query: "O Zone Dragostea Din Tei", title: "Dragostea Din Tei - O-Zone" },
+      { category: "Polski Blues i Klasyczny Rock", query: "Breakout Kiedy bylem malym chlopcem", title: "Kiedybyłem małym chłopcem - Breakout" },
+      { category: "Breakout Poszlabym za toba", query: "Breakout Poszlabym za toba", title: "Poszłabym za tobą - Breakout" },
+      { category: "Stan Borys Jaskolka uwieziona", query: "Stan Borys Jaskolka uwieziona", title: "Jaskółka uwięziona - Stan Borys" },
+      { category: "Dzem Do kolyski", query: "Dzem Do kolyski", title: "Do kołyski - Dżem" },
+      { category: "Tadeusz Nalepa Rzeka dziecinstwa", query: "Tadeusz Nalepa Rzeka dziecinstwa", title: "Rzeka dzieciństwa - Tadeusz Nalepa" },
+      { category: "Ciężkie Brzmienia i Hard Rock", query: "Metallica Nothing Else Matters", title: "Nothing Else Matters - Metallica" },
+      { category: "Black Sabbath Paranoid", query: "Black Sabbath Paranoid", title: "Paranoid - Black Sabbath" },
+      { category: "KISS I Was Made For Lovin You", query: "KISS I Was Made For Lovin You", title: "I Was Made for Lovin' You - KISS" },
+      { category: "Alice Cooper Poison", query: "Alice Cooper Poison", title: "Poison - Alice Cooper" },
+      { category: "The Doors Light My Fire", query: "The Doors Light My Fire", title: "Light My Fire - The Doors" },
+      { category: "Hity Dyskotek Lat 2000.", query: "Gigi D Agostino L Amour Toujours", title: "L'Amour Toujours - Gigi D'Agostino" },
+      { category: "Bomfunk MCs Freestyler", query: "Bomfunk MCs Freestyler", title: "Freestyler - Bomfunk MC's" },
+      { category: "Alice Deejay Better Off Alone", query: "Alice Deejay Better Off Alone", title: "Better Off Alone - Alice Deejay" },
+      { category: "Eric Prydz Call On Me", query: "Eric Prydz Call On Me", title: "Call On Me - Eric Prydz" },
+      { category: "Darude Sandstorm", query: "Darude Sandstorm", title: "Sandstorm - Darude" },
+      { category: "Poezja Śpiewana i Piosenka Studencka", query: "Stare Dobre Malzenstwo Czarny blues o czwartej nad ranem", title: "Czarny blues o czwartej nad ranem - Stare Dobre Małżeństwo" },
+      { category: "Stare Dobre Malzenstwo Jak", query: "Stare Dobre Malzenstwo Jak", title: "Bieszczadzkie anioły - Stare Dobre Małżeństwo" },
+      { category: "Wolna Grupa Bukowina Majster Bieda", query: "Wolna Grupa Bukowina Majster Bieda", title: "Majster Bieda - Wolna Grupa Bukowina" },
+      { category: "Wolna Grupa Bukowina Bez slow", query: "Wolna Grupa Bukowina Bez slow", title: "Bez słów - Wolna Grupa Bukowina" },
+      { category: "Klasyczny Rock Stadiony (AOR)", query: "Journey Don T Stop Believin", title: "Don't Stop Believin' - Journey" },
+      { category: "Toto Africa", query: "Toto Africa", title: "Africa - Toto" },
+      { category: "Toto Rosanna", query: "Toto Rosanna", title: "Rosanna - Toto" },
+      { category: "Foreigner I Want To Know What Love Is", query: "Foreigner I Want To Know What Love Is", title: "I Want to Know What Love Is - Foreigner" },
+      { category: "Whitesnake Here I Go Again", query: "Whitesnake Here I Go Again", title: "Here I Go Again - Whitesnake" },
+      { category: "Chicago Hard To Say Im Sorry", query: "Chicago Hard To Say Im Sorry", title: "Hard to Say I'm sorry - Chicago" },
+      { category: "Polskie Hity Przełomu Wieków", query: "Kasia Kowalska A to co mam", title: "A to co mam - Kasia Kowalska" },
+      { category: "Wilki Eli lama sabachthani", query: "Wilki Eli lama sabachthani", title: "Eli lama sabachthani - Wilki" },
+      { category: "Hity Klubowe i Elektroniczne", query: "Avicii Levels", title: "Levels - Avicii" },
+      { category: "Avicii Wake Me Up", query: "Avicii Wake Me Up", title: "Wake Me Up - Avicii" },
+      { category: "Calvin Harris This Is What You Came For", query: "Calvin Harris This Is What You Came For", title: "This Is What You Came For - Calvin Harris & Rihanna" },
+      { category: "Calvin Harris Summer", query: "Calvin Harris Summer", title: "Summer - Calvin Harris" },
+      { category: "Swedish House Mafia Don You Worry Child", query: "Swedish House Mafia Don You Worry Child", title: "Don't You Worry Child - Swedish House Mafia" },
+      { category: "Polskie Piosenki Kabaretowe", query: "Jan Pietrzak Zeby polska byla polska", title: "Żeby Polska była Polską - Jan Pietrzak" },
+      { category: "Najnowsze Hity Światowe (2024-2026)", query: "Chappell Roan Good Luck Babe", title: "Good Luck, Babe! - Chappell Roan" },
+      { category: "Shaboozey A Bar Song Tipsy", query: "Shaboozey A Bar Song Tipsy", title: "A Bar Song (Tipsy) - Shaboozey" },
+      { category: "Teddy Swims Lose Control", query: "Teddy Swims Lose Control", title: "Lose Control - Teddy Swims" },
+      { category: "Billie Eilish Lunch", query: "Billie Eilish Lunch", title: "LUNCH - Billie Eilish" },
+      { category: "Gracie Abrams Risk", query: "Gracie Abrams Risk", title: "Risk - Gracie Abrams" },
+      { category: "Benson Boone Slow It Down", query: "Benson Boone Slow It Down", title: "Slow It Down - Benson Boone" },
+      { category: "Teddy Swims The Door", query: "Teddy Swims The Door", title: "The Door - Teddy Swims" },
+      { category: "Gracie Abrams I Love You Im Sorry", query: "Gracie Abrams I Love You Im Sorry", title: "I Love You, I'm Sorry - Gracie Abrams" },
+      { category: "Chappell Roan Pink Pony Club", query: "Chappell Roan Pink Pony Club", title: "Pink Pony Club - Chappell Roan" },
+      { category: "Sabrina Carpenter Bad Chem", query: "Sabrina Carpenter Bad Chem", title: "Bed Chem - Sabrina Carpenter" },
+      { category: "Billie Eilish Chihiro", query: "Billie Eilish Chihiro", title: "CHIHIRO - Billie Eilish" },
+      { category: "Dua Lipa Houdini", query: "Dua Lipa Houdini", title: "Houdini - Dua Lipa" },
+      { category: "Myles Smith Stargazing", query: "Myles Smith Stargazing", title: "Stargazing - Myles Smith" },
+      { category: "Hozier Too Sweet", query: "Hozier Too Sweet", title: "Too Sweet - Hozier" },
+      { category: "Nowy Polski Pop i Alternatywa", query: "Dawid Podsiadlo O czym snisz", title: "O czym śnisz? - Dawid Podsiadło & sanah" },
+      { category: "Kacperczyk Kryzys", query: "Kacperczyk Kryzys", title: "Sebiksy - Kacperczyk & Julia Wieniawa" },
+      { category: "Klasyka Polskiego Rocka", query: "Kult Do Ani", title: "Do Ani - Kult" },
+      { category: "Legendary Ballads & Rock Lat 80. i 90.", query: "Dire Straits Money For Nothing", title: "Money for Nothing -标志 Dire Straits" },
+      { category: "Bruce Springsteen Born In The USA", query: "Bruce Springsteen Born In The USA", title: "Born in the U.S.A. - Bruce Springsteen" },
+      { category: "Bryan Adams Please Forgive Me", query: "Bryan Adams Please Forgive Me", title: "Please Forgive Me - Bryan Adams" },
+      { category: "Bon Jovi Always", query: "Bon Jovi Always", title: "Always - Bon Jovi" },
+      { category: "Madonna Frozen", query: "Madonna Frozen", title: "Frozen - Madonna" },
+      { category: "Światowy Pop i Rock Lat 80. i 90.", query: "Fleetwood Mac Dreams", title: "Dreams - Fleetwood Mac" },
+      { category: "Tears For Fears Everybody Wants To Rule The World", query: "Tears For Fears Everybody Wants To Rule The World", title: "Everybody Wants to Rule the World - Tears for Fears" },
+      { category: "Simple Minds Don T You Forget About Me", query: "Simple Minds Don T You Forget About Me", title: "Don't You (Forget About Me) - Simple Minds" },
+      { category: "Cyndi Lauper Time After Time", query: "Cyndi Lauper Time After Time", title: "Time After Time - Cyndi Lauper" },
+      { category: "The Police Walking On The Moon", query: "The Police Walking On The Moon", title: "Walking On The Moon - The Police" },
+      { category: "Polski Rock i Alternatywa", query: "Coma Leszek Zukowski", title: "Leszek Żukowski - Coma" },
+      { category: "Najnowsze Hity Światowe (2024-2026)", query: "Sabrina Carpenter Please Please Please", title: "Please Please Please - Sabrina Carpenter" },
+      { category: "Charli XCX Apple", query: "Charli XCX Apple", title: "Apple - Charli xcx" },
+      { category: "Post Malone I Had Some Help", query: "Post Malone I Had Some Help", title: "I Had Some Help - Post Malone & Morgan Wallen" },
+      { category: "Gracie Abrams Close To You", query: "Gracie Abrams Close To You", title: "Close To You - Gracie Abrams" },
+      { category: "Noah Kahan Stick Season", query: "Noah Kahan Stick Season", title: "Stick Season - Noah Kahan" },
+      { category: "Disco Polo i Taneczne Hity", query: "Akcent Krolowa nocy", title: "Królowa nocy - Akcent" },
+      { category: "Boys Lobuz", query: "Boys Lobuz", title: "Łobuz - Boys" },
+      { category: "Mig Miod malina", query: "Mig Miod malina", title: "Miód malina - Mig" },
+      { category: "Lobuzy Ona czuje we mnie piniadz", query: "Lobuzy Ona czuje we mnie piniadz", title: "Ona czuje we mnie piniądz - Łobuzy" },
+      { category: "Muzyka Filmowa i Instrumentalna", query: "Ennio Morricone Chi Mai", title: "Chi Mai - Ennio Morricone" },
+      { category: "Nino Rota The Godfather", query: "Nino Rota The Godfather", title: "The Godfather (Love Theme) - Nino Rota" },
+      { category: "Hans Zimmer Time", query: "Hans Zimmer Time", title: "Time - Hans Zimmer" },
+      { category: "Klasyka Rocka Progresywnego i Art Rocka", query: "Pink Floyd Wish You Were Here", title: "Wish You Were Here - Pink Floyd" },
+      { category: "Pink Floyd Money", query: "Pink Floyd Money", title: "Money - Pink Floyd" },
+      { category: "Queen Innuendo", query: "Queen Innuendo", title: "Innuendo - Queen" },
+      { category: "Sting Desert Rose", query: "Sting Desert Rose", title: "Desert Rose - Sting" },
+      { category: "Światowe Ballady Miłosne Lat 80. i 90.", query: "Foreigner Waiting For A Girl Like You", title: "Waiting for a Girl Like You - Foreigner" },
+      { category: "Richard Marx Right Here Waiting", query: "Richard Marx Right Here Waiting", title: "Right Here Waiting - Richard Marx" },
+      { category: "George Michael Father Figure", query: "George Michael Father Figure", title: "Father Figure - George Michael" },
+      { category: "Chris de Burgh Lady In Red", query: "Chris de Burgh Lady In Red", title: "The Lady in Red - Chris de Burgh" },
+      { category: "Hity Radia i List Przebojów (2010-2020)", query: "Gotye Somebody That I Used To Know", title: "Somebody That I Used to Know - Gotye & Kimbra" },
+      { category: "Lorde Royals", query: "Lorde Royals", title: "Royals - Lorde" },
+      { category: "Mark Ronson Uptown Funk", query: "Mark Ronson Uptown Funk", title: "Uptown Funk - Mark Ronson & Bruno Mars" },
+      { category: "Pharrell Williams Happy", query: "Pharrell Williams Happy", title: "Happy - Pharrell Williams" },
+      { category: "Passenger Let Her Go", query: "Passenger Let Her Go", title: "Let Her Go - Passenger" },
+      { category: "Klasyczne Hity Taneczne i Dyskotekowe", query: "Earth Wind And Fire Let s Groove", title: "Let's Groove - Earth, Wind & Fire" },
+      { category: "Chic Le Freak", query: "Chic Le Freak", title: "Le Freak - Chic" },
+      { category: "Sister Sledge We Are Family", query: "Sister Sledge We Are Family", title: "We Are Family - Sister Sledge" },
+      { category: "Polskie Piosenki Aktorskie i Kabaretowe", query: "Magda Umer Koncert jesienny", title: "Koncert jesienny na dwa świerszcze i wiatr w kominie - Magda Umer" },
+      { category: "Natalia Kukulska i Pop Lat 90.", query: "Natalia Kukulska Im wiecej ciebie tym mniej", title: "Im więcej Ciebie tym mniej - Natalia Kukulska" },
+      { category: "Natalia Kukulska Dlonie", query: "Natalia Kukulska Dlonie", title: "Dłoń - Natalia Kukulska" },
+      { category: "Natalia Kukulska Piosenka swiatloplad", query: "Natalia Kukulska Piosenka swiatloplad", title: "Piosenka światłoczuła - Natalia Kukulska" },
+      { category: "Anita Lipnicka Wszystko sie moze zdarzyc", query: "Anita Lipnicka Wszystko sie moze zdarzyc", title: "I wszystko się może zdarzyć - Anita Lipnicka" },
+      { category: "Alternatywny Polski Rock (Lao Che, Pidżama Porno)", query: "Lao Che Stare miasto", title: "Stare Miasto - Lao Che" },
+      { category: "Strachy na Lachy Pianta", query: "Strachy na Lachy Pianta", title: "Piła tango - Strachy na Lachy" },
+      { category: "Złote Hity Lat 80. (Wham!, Duran Duran)", query: "Wham Wake Me Up Before You Go Go", title: "Wake Me Up Before You Go-Go - Wham!" },
+      { category: "Wham Last Christmas", query: "Wham Last Christmas", title: "Last Christmas - Wham!" },
+      { category: "Duran Duran Ordinary World", query: "Duran Duran Ordinary World", title: "Ordinary World - Duran Duran" },
+      { category: "Duran Duran Rio", query: "Duran Duran Rio", title: "Rio - Duran Duran" },
+      { category: "Culture Club Do You Really Want To Hurt Me", query: "Culture Club Do You Really Want To Hurt Me", title: "Do You Really Want to Hurt Me - Culture Club" },
+      { category: "Culture Club Karma Chameleon", query: "Culture Club Karma Chameleon", title: "Karma Chameleon - Culture Club" },
+      { category: "Klasyczne Ballady Rockowe (Lat 70. i 80.)", query: "Procol Harum A Whiter Shade Of Pale", title: "A Whiter Shade of Pale - Procol Harum" },
+      { category: "The Cars Drive", query: "The Cars Drive", title: "Drive - The Cars" },
+      { category: "SUPERTRAMP Logical Song", query: "SUPERTRAMP Logical Song", title: "The Logical Song - Supertramp" },
+      { category: "The Moody Nights Nights In White Satin", query: "The Moody Nights Nights In White Satin", title: "Nights in White Satin - The Moody Blues" },
+      { category: "Nazareth Love Hurts", query: "Nazareth Love Hurts", title: "Love Hurts - Nazareth" },
+      { category: "Współczesna Alternatywa i Pop (Polska)", query: "Natalia Przybysz Nazywam sie niebo", title: "Nazywam się niebo - Natalia Przybysz" },
+      { category: "Natalia Przybysz Miod", query: "Natalia Przybysz Miod", title: "Miód - Natalia Przybysz" },
+      { category: "Sanah Hip hip hura", query: "Sanah Hip hip hura", title: "Hip hip hura! - sanah" },
+      { category: "Dawid Podsiadlo Post", query: "Dawid Podsiadlo Post", title: "POST - Dawid Podsiadło" },
+      { category: "Polskie Hity Radiowe 2010-2020", query: "Sanah Krolowa dram", title: "Królowa dram - sanah" },
+      { category: "Polskie Przeboje Estradowe i Aktorskie", query: "Krzysztof Krawczyk Pamietam cie z tamtych lat", title: "Pamiętam ciebie z tamtych lat - Krzysztof Krawczyk" },
+      { category: "Zbigniew Wodecki Nad wszystko uśmiech twój", query: "Zbigniew Wodecki Nad wszystko uśmiech twój", title: "Nad wszystko uśmiech twój - Zbigniew Wodecki" },
+      { category: "Magda Umer Już szumią kasztany", query: "Magda Umer Już szumią kasztany", title: "Już szumią kasztany - Magda Umer" },
+      { category: "Taneczne Hity i Disco Polo (Rozszerzenie)", query: "Top Girls Mleczko", title: "Mleczko - Top Girls" },
+      { category: "Piękni i Młodzi Brava", query: "Piękni i Młodzi Brava", title: "DRAMA - Magdalena Narożna & Piękni i Młodzi" },
+      { category: "Mega Hity Pop i Dance (2000-2020)", query: "Justin Bieber Baby", title: "Baby - Justin Bieber" },
+      { category: "Justin Bieber Sorry", query: "Justin Bieber Sorry", title: "Sorry - Justin Bieber" },
+      { category: "Justin Bieber Love Yourself", query: "Justin Bieber Love Yourself", title: "Love Yourself - Justin Bieber" },
+      { category: "Pitbull Timber", query: "Pitbull Timber", title: "Timber - Pitbull & Kesha" },
+      { category: "Pitbull Give Me Everything", query: "Pitbull Give Me Everything", title: "Give Me Everything - Pitbull" },
+      { category: "Pitbull I Know You Want Me", query: "Pitbull I Know You Want Me", title: "I Know You Want Me (Calle Ocho) - Pitbull" },
+      { category: "Królowe List Przebojów (2000-2020)", query: "Rihanna Diamonds", title: "Diamonds - Rihanna" },
+      { category: "Rihanna Dont Stop The Music", query: "Rihanna Dont Stop The Music", title: "Don't Stop The Music - Rihanna" },
+      { category: "Katy Perry Roar", query: "Katy Perry Roar", title: "Roar - Katy Perry" },
+      { category: "Katy Perry Firework", query: "Katy Perry Firework", title: "Firework - Katy Perry" },
+      { category: "Katy Perry Dark Horse", query: "Katy Perry Dark Horse", title: "Dark Horse - Katy Perry" },
+      { category: "Ikony Popu i Muzyki Klubowej", query: "Lady Gaga Just Dance", title: "Just Dance - Lady Gaga" },
+      { category: "Shakira Hips Don Lie", query: "Shakira Hips Don Lie", title: "Hips Don't Lie - Shakira" },
+      { category: "Stadionowy Pop i Rock (2000-2020)", query: "Maroon 5 Sugar", title: "Sugar - Maroon 5" },
+      { category: "Maroon 5 Moves Like Jagger", query: "Maroon 5 Moves Like Jagger", title: "Moves Like Jagger - Maroon 5 & Christina Aguilera" },
+      { category: "Bruno Mars Locked Out Of Heaven", query: "Bruno Mars Locked Out Of Heaven", title: "Locked Out of Heaven - Bruno Mars" },
+      { category: "Bruno Mars 24K Magic", query: "Bruno Mars 24K Magic", title: "24K Magic - Bruno Mars" },
+      { category: "LMFAO Party Rock Anthem", query: "LMFAO Party Rock Anthem", title: "Party Rock Anthem - LMFAO" },
+      { category: "Najnowsze Hity Światowe (2024-2026)", query: "Sabrina Carpenter Taste", title: "Taste - Sabrina Carpenter" },
+      { category: "Chappell Roan Hot To Go", query: "Chappell Roan Hot To Go", title: "HOT TO GO! - Chappell Roan" },
+      { category: "Kendrick Lamar Not Like Us", query: "Kendrick Lamar Not Like Us", title: "Not Like Us - Kendrick Lamar" },
+      { category: "Billie Eilish Birds Of A Feather", query: "Billie Eilish Birds Of A Feather", title: "BIRDS OF A FEATHER - Billie Eilish" },
+      { category: "Tommy Richman Million Dollar Baby", query: "Tommy Richman Million Dollar Baby", title: "MILLION DOLLAR BABY - Tommy Richman" },
+      { category: "Post Malone Taylor Swift Fortnight", query: "Post Malone Taylor Swift Fortnight", title: "Fortnight - Taylor Swift & Post Malone" },
+      { category: "Artemas i like the way you kiss me", query: "Artemas i like the way you kiss me", title: "i like the way you kiss me - Artemas" },
+      { category: "Nowy Polski Pop i Hity (2024-2026)", query: "Daria Zawialow Sobie i wam", title: "Złamane serce jest OK - Daria Zawiałow" },
+      { category: "Sanah Bahama Mama", query: "Sanah Bahama Mama", title: "Bahama Mama - Tonash" },
+      { category: "Dawid Podsiadlo Leb w dol", query: "Dawid Podsiadlo Leb w dol", title: "I标志 Ciebie też, bardzo - Męskie Granie Orkiestra" },
+      { category: "Kacperczyk Bieg", query: "Kacperczyk Bieg", title: "Syn okiennika - Kacperczyk & Artur Rojek" },
+      { category: "Daria Zawialow Z toba chce byc soba", query: "Daria Zawialow Z toba chce byc soba", title: "BUBBLETEA - Quebonafide & Daria Zawiałow" },
+      { category: "Kaska Sochacka Madison", query: "Kaska Sochacka Madison", title: "Madison - Kaśka Sochacka" },
+      { category: "Ignacy Czekam na znak", query: "Ignacy Czekam na znak", title: "Czekam na znak - IGNACY" },
+      { category: "Brodka Game Change", query: "Brodka Game Change", title: "Game Change - Brodka" },
+      { category: "Igo Spokojnie", query: "Igo Spokojnie", title: "Zanim zrozumiesz - Męskie Granie Orkiestra" },
+      { category: "Klubowe i Radiowe Hity (2023-2026)", query: "Peggy Gou Nanana", title: "(It Goes Like) Nanana - Peggy Gou" },
+      { category: "David Guetta Baby Dont Hurt Me", query: "David Guetta Baby Dont Hurt Me", title: "Baby Don't Hurt Me - David Guetta" },
+      { category: "Tiesto Lay Low", query: "Tiesto Lay Low", title: "Lay Low - Tiësto" },
+      { category: "Coi Leray Players", query: "Coi Leray Players", title: "Players - Coi Leray" },
+      { category: "Włoskie Przeboje Festiwalowe", query: "Adriano Celentano Azzurro", title: "Azzurro - Adriano Celentano" },
+      { category: "Klasyczne Hity Rockowe", query: "Deep Purple Child in Time", title: "Child in Time - Deep Purple" },
+      { category: "Van Halen Jump", query: "Van Halen Jump", title: "Jump - Van Halen" },
+      { category: "ZZ Top Gimme All Your Lovin", query: "ZZ Top Gimme All Your Lovin", title: "Gimme All Your Lovin' - ZZ Top" },
+      { category: "AC DC Back in Black", query: "AC DC Back in Black", title: "Back in Black - AC/DC" },
+      { category: "Rainbow Since You Been Gone", query: "Rainbow Since You Been Gone", title: "Since You Been Gone - Rainbow" },
+      { category: "Polskie Przeboje Lat 80. i 90.", query: "Tilt O to ja", title: "O to ja - Tilt" },
+      { category: "Zagraniczne Ballady i Pop", query: "Mariah Carey Always Be My Baby", title: "Always Be My Baby - Mariah Carey" },
+      { category: "Hity Radiowe i Klubowe 2010-2020", query: "Ed Sheeran Shape of You", title: "Shape of You - Ed Sheeran" },
+      { category: "Clean Bandit Symphony", query: "Clean Bandit Symphony", title: "Symphony - Clean Bandit & Zara Larsson" },
+      { category: "Avicii Hey Brother", query: "Avicii Hey Brother", title: "Hey Brother - Avicii" },
+      { category: "The Chainsmokers Closer", query: "The Chainsmokers Closer", title: "Closer - The Chainsmokers & Halsey" },
+      { category: "Post Malone Circles", query: "Post Malone Circles", title: "Circles - Post Malone" },
+      { category: "Billie Eilish Ocean Eyes", query: "Billie Eilish Ocean Eyes", title: "ocean eyes - Billie Eilish" },
+      { category: "Dua Lipa Levitating", query: "Dua Lipa Levitating", title: "Levitating - Dua Lipa" },
+      { category: "The Weeknd Blinding Lights", query: "The Weeknd Blinding Lights", title: "Blinding Lights - The Weeknd" },
+      { category: "Quebonafide Jesien", query: "Quebonafide Jesien", title: "JESIEŃ - Quebonafide & Natalia Szroeder" },
+      { category: "Światowe Hity Taneczne i Pop (2010-2020)", query: "Calvin Harris How Deep Is Your Love", title: "How Deep Is Your Love - Calvin Harris" },
+      { category: "Avicii Without You", query: "Avicii Without You", title: "Without You - Avicii" },
+      { category: "Kygo Firestone", query: "Kygo Firestone", title: "Firestone - Kygo" },
+      { category: "Alan Walker Faded", query: "Alan Walker Faded", title: "Faded - Alan Walker" },
+      { category: "Shawn Mendes Senorita", query: "Shawn Mendes Senorita", title: "Señorita - Shawn Mendes & Camila Cabello" },
+      { category: "Ed Sheeran Thinking Out Loud", query: "Ed Sheeran Thinking Out Loud", title: "Thinking Out Loud - Ed Sheeran" }
+    ];
+
+    let currentRound = 1;
+    let activeCategoriesSet = [];
+    let playedIds = [];
+    let selectedSong = null;
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    let finalAmount = 0;
+    let totalSessionMoney = 0;
+    let isReviewMode = false;
+    let currentPreviewUrl = null;
+
+    const audio = document.getElementById('audioPlayer');
+    const moneyDisplay = document.getElementById('moneyDisplay');
+    const stopBtn = document.getElementById('stopBtn');
+    const revealBtn = document.getElementById('revealBtn');
+    const answerBox = document.getElementById('answerBox');
+    const statusMsg = document.getElementById('statusMsg');
+    const progressBar = document.getElementById('progressBar');
+    const homeBtn = document.getElementById('homeBtn');
+
+    // === SYSTEM POWTÓREK ===
+    function getReviewSongs() {
+        try {
+            let saved = localStorage.getItem('kindziu_review_songs_v2');
+            if (!saved) return [];
+            return JSON.parse(saved);
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function addReviewSong(song) {
+        try {
+            let list = getReviewSongs();
+            if (!list.some(s => s.query === song.query)) {
+                list.push({
+                    category: song.category,
+                    query: song.query,
+                    title: song.title
+                });
+                localStorage.setItem('kindziu_review_songs_v2', JSON.stringify(list));
+            }
+            updateReviewMenuButton();
+        } catch (e) {
+            console.error("Błąd zapisu do powtórek:", e);
+        }
+    }
+
+    function removeReviewSong(query) {
+        try {
+            let list = getReviewSongs();
+            let filtered = list.filter(s => s.query !== query);
+            localStorage.setItem('kindziu_review_songs_v2', JSON.stringify(filtered));
+            updateReviewMenuButton();
+        } catch (e) {
+            console.error("Błąd usuwania z powtórek:", e);
+        }
+    }
+
+    function updateReviewMenuButton() {
+        const reviewBtn = document.getElementById('reviewMenuBtn');
+        const reviewSub = document.getElementById('reviewMenuSub');
+        if (!reviewBtn || !reviewSub) return;
+
+        let reviewList = getReviewSongs();
+        let count = reviewList.length;
+
+        reviewSub.innerText = `${count}/949 haseł (wymagane min. 10 haseł)`;
+
+        if (count >= 10) {
+            reviewBtn.disabled = false;
+            reviewBtn.style.opacity = "1";
+            reviewBtn.style.background = "linear-gradient(135deg, #2ecc71, #27ae60)";
+            reviewBtn.style.borderColor = "#2ecc71";
+            reviewSub.style.color = "#d4edda";
+        } else {
+            reviewBtn.disabled = true;
+            reviewBtn.style.opacity = "0.5";
+            reviewBtn.style.background = "rgba(255, 255, 255, 0.08)";
+            reviewBtn.style.borderColor = "rgba(255, 255, 255, 0.15)";
+            reviewSub.style.color = "#8ecae6";
+        }
+    }
+
+    function playFeedbackSound(isWin) {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioCtx();
+            if (ctx.state === 'suspended') ctx.resume();
+            const now = ctx.currentTime;
+            const notes = isWin ? [523.25, 659.25, 783.99] : [349.23, 311.13];
+            notes.forEach((f, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(f, now + i * 0.08);
+                gain.gain.setValueAtTime(0.0001, now + i * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.15, now + i * 0.08 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 0.3);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.35);
+            });
+        } catch (e) {
+            console.log("Audio niedostępne", e);
+        }
+    }
+
+    function goToMenu() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+        clearInterval(timerInterval);
+
+        const stopReactionAudio = document.getElementById('stopReactionAudio');
+        if (stopReactionAudio) {
+            stopReactionAudio.pause();
+            stopReactionAudio.currentTime = 0;
+        }
+
+        stopIntroMusic();
+        stopStudioShowEffects();
+
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('introScreen').style.display = 'none';
+        document.getElementById('mainMenuScreen').style.display = 'block';
+        document.getElementById('categoryScreen').style.display = 'none';
+        document.getElementById('gameScreen').style.display = 'none';
+        document.getElementById('summaryScreen').style.display = 'none';
+        
+        const card = document.getElementById('mainCard');
+        card.classList.remove('blur-effect');
+        card.classList.remove('punch-effect');
+        
+        homeBtn.style.display = 'none';
+        updateReviewMenuButton();
+    }
+
+    function showMainMenu() {
+        goToMenu();
+        document.getElementById('mainMenuScreen').style.display = 'block';
+        homeBtn.style.display = 'flex';
+    }
+
+    function selectRound(round) {
+        stopIntroMusic();
+        stopStudioShowEffects();
+        
+        isReviewMode = false;
+        currentRound = round;
+        totalSessionMoney = 0;
+        
+        document.getElementById('mainMenuScreen').style.display = 'none';
+        document.getElementById('categoryScreen').style.display = 'block';
+        document.getElementById('reloadBtn').style.display = 'flex';
+        homeBtn.style.display = 'flex';
+
+        document.getElementById('roundInfo').innerText = round === 1 
+            ? "RUNDA 1: Wybierz kategorię (rosnąco 100 zł ➔ 200 zł):" 
+            : "RUNDA 2: Wybierz kategorię (malejąco 200 zł ➔ 100 zł):";
+
+        drawNewSet();
+    }
+
+    function startReviewMode() {
+        stopIntroMusic();
+        stopStudioShowEffects();
+        
+        isReviewMode = true;
+        totalSessionMoney = 0;
+
+        let reviewList = getReviewSongs();
+        if (reviewList.length < 10) return;
+
+        document.getElementById('mainMenuScreen').style.display = 'none';
+        document.getElementById('categoryScreen').style.display = 'block';
+        document.getElementById('reloadBtn').style.display = 'none';
+        homeBtn.style.display = 'flex';
+
+        document.getElementById('roundInfo').innerText = "DO POWTÓRKI: Trening trudnych utworów (100 zł ➔ 200 zł):";
+
+        playShuffleSound();
+
+        playedIds = [];
+        const shuffled = [...reviewList].sort(() => 0.5 - Math.random());
+        const count = Math.min(5, shuffled.length);
+        const selected = shuffled.slice(0, count);
+
+        activeCategoriesSet = selected.map((item, index) => ({
+            id: index + 1,
+            category: item.category,
+            query: item.query,
+            title: item.title
+        }));
+
+        renderCategories();
+    }
+
+    function drawNewSet() {
+        if (isReviewMode) {
+            startReviewMode();
+            return;
+        }
+
+        playShuffleSound();
+        const icon = document.getElementById('reloadIcon');
+        if (icon) {
+            icon.classList.remove('spin-anim');
+            void icon.offsetWidth;
+            icon.classList.add('spin-anim');
+        }
+
+        playedIds = [];
+        const requiredCount = currentRound === 1 ? 5 : 3;
+        
+        const categoriesList = [...new Set(masterSongPool.map(item => item.category))];
+        const shuffledCategories = categoriesList.sort(() => 0.5 - Math.random());
+        const selectedCategories = shuffledCategories.slice(0, requiredCount);
+
+        activeCategoriesSet = selectedCategories.map((catName, index) => {
+            const availableSongs = masterSongPool.filter(s => s.category === catName);
+            const randomSong = availableSongs[Math.floor(Math.random() * availableSongs.length)];
+            return {
+                id: index + 1,
+                category: catName,
+                query: randomSong.query,
+                title: randomSong.title
+            };
+        });
+
+        renderCategories();
+    }
+
+    function renderCategories() {
+        const list = document.getElementById('categoriesList');
+        list.innerHTML = '';
+
+        activeCategoriesSet.forEach((item, index) => {
+            const btn = document.createElement('button');
+            let isPlayed = playedIds.includes(item.id);
+            let delay = 0;
+            
+            if (playedIds.length === 0) {
+                btn.className = 'cat-btn animate-in';
+                delay = index * 0.12;
+                btn.style.animationDelay = `${delay}s`;
+                playPopSound(delay + 0.05);
+            } else {
+                btn.className = 'cat-btn' + (isPlayed ? ' played' : '');
+                btn.style.opacity = '1';
+                btn.style.transform = 'translateY(0)';
+            }
+
+            btn.innerHTML = `<span>${item.category}</span> <span>${isPlayed ? '✓' : '➔'}</span>`;
+            if (!isPlayed) {
+                btn.onclick = () => startSong(item);
+            }
+            list.appendChild(btn);
+        });
+    }
+
+    async function startSong(song) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        selectedSong = song;
+        document.getElementById('categoryScreen').style.display = 'none';
+        document.getElementById('gameScreen').style.display = 'block';
+        document.getElementById('currentCategory').innerText = song.category;
+        homeBtn.style.display = 'flex';
+        
+        answerBox.style.display = 'none';
+        revealBtn.style.display = 'none';
+        stopBtn.disabled = true;
+        statusMsg.innerText = "Szukanie utworu w chmurze...";
+        progressBar.style.width = "0%";
+
+        elapsedSeconds = 0;
+        finalAmount = (isReviewMode || currentRound === 1) ? 100 : 200;
+        moneyDisplay.innerText = finalAmount;
+
+        try {
+            const cleanQuery = song.query.replace(/[^\w\s]/gi, '');
+            const targetUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(cleanQuery)}&entity=song&limit=1`;
+            
+            const response = await fetch(targetUrl);
+            const data = await response.json();
+
+            if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+                currentPreviewUrl = data.results[0].previewUrl;
+                audio.src = currentPreviewUrl;
+                audio.currentTime = 12; 
+                
+                audio.play();
+                statusMsg.innerText = "Graj!";
+                stopBtn.disabled = false;
+
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    elapsedSeconds++;
+                    finalAmount = (isReviewMode || currentRound === 1) ? (100 + elapsedSeconds * 10) : (200 - elapsedSeconds * 10);
+                    moneyDisplay.innerText = finalAmount;
+                    
+                    let progressPercent = (elapsedSeconds / 10) * 100;
+                    progressBar.style.width = Math.min(progressPercent, 100) + "%";
+
+                    if (elapsedSeconds >= 10) stopMusic(true);
+                }, 1000);
+            } else {
+                statusMsg.innerText = "Błąd: Brak darmowej próbki w bazie iTunes dla tego utworu.";
+            }
+        } catch (e) {
+            statusMsg.innerText = "Błąd połączenia z serwerem muzycznym.";
+        }
+    }
+
+    const stopReactionSounds = [
+        'stop-reakcja-1.mp3', 'stop-reakcja-2.mp3', 'stop-reakcja-3.mp3', 'stop-reakcja-4.mp3',
+        'stop-reakcja-5.mp3', 'stop-reakcja-6.mp3', 'stop-reakcja-7.mp3', 'stop-reakcja-8.mp3',
+        'stop-reakcja-9.mp3', 'stop-reakcja-10.mp3', 'stop-reakcja-11.mp3', 'stop-reakcja-12.mp3'
+    ];
+
+    let recentReactionIndices = [];
+
+    function playRandomStopReaction() {
+        const stopReactionAudio = document.getElementById('stopReactionAudio');
+        let randomIndex;
+        do {
+            randomIndex = Math.floor(Math.random() * stopReactionSounds.length);
+        } while (recentReactionIndices.includes(randomIndex));
+
+        recentReactionIndices.push(randomIndex);
+        if (recentReactionIndices.length > 3) recentReactionIndices.shift();
+
+        stopReactionAudio.src = stopReactionSounds[randomIndex];
+        stopReactionAudio.currentTime = 0;
+        stopReactionAudio.play().catch(e => console.log('Błąd audio reakcji:', e));
+    }
+
+    function stopMusic(timeOut = false) {
+        audio.pause();
+        clearInterval(timerInterval);
+        stopBtn.disabled = true;
+        revealBtn.style.display = 'block';
+
+        if (timeOut) {
+            statusMsg.innerText = "Czas minął!";
+            document.getElementById('resultText').innerText = "Brak reakcji w 10 sekund. Zdobyto: 0 zł";
+            finalAmount = 0;
+        } else {
+            statusMsg.innerText = "Zatrzymano!";
+            document.getElementById('resultText').innerText = "Do Twojego konta trafia: " + finalAmount + " zł";
+            totalSessionMoney += finalAmount;
+
+            setTimeout(() => {
+                playRandomStopReaction();
+            }, 500);
+        }
+    }
+
+    function showSplitButtons() {
+        document.getElementById('mainSpeakerBtn').style.display = 'none';
+        document.getElementById('splitSpeakerContainer').style.display = 'flex';
+    }
+
+    function speakWithLang(langCode) {
+        if (!selectedSong) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(selectedSong.title);
+            utterance.lang = langCode;
+            utterance.rate = 0.88;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("Twoja przeglądarka nie obsługuje syntezatora mowy.");
+        }
+    }
+
+    function revealAnswer() {
+        document.getElementById('answerText').innerText = selectedSong.title;
+        
+        document.getElementById('mainSpeakerBtn').style.display = 'block';
+        document.getElementById('splitSpeakerContainer').style.display = 'none';
+
+        let labelYes = isReviewMode ? "Już znam" : "Znałam";
+        let labelNo = isReviewMode ? "Nie znałam" : "Nie znałam";
+
+        let feedbackHtml = `
+            <button class="feedback-btn" onclick="handleFeedback(true)" style="background: #2ecc71;">✅ ${labelYes}</button>
+            <button class="feedback-btn" onclick="handleFeedback(false)" style="background: #e74c3c;">❌ ${labelNo}</button>
+        `;
+        
+        let existingFeedback = document.getElementById('feedbackBtns');
+        existingFeedback.innerHTML = feedbackHtml;
+        existingFeedback.style.display = 'flex';
+
+        answerBox.style.display = 'block';
+        revealBtn.style.display = 'none';
+        if (!playedIds.includes(selectedSong.id)) playedIds.push(selectedSong.id);
+    }
+
+    let isFullPlaying = false;
+    function toggleFullPreview() {
+        const btn = document.getElementById('listenFullBtn');
+        if (!currentPreviewUrl) return;
+
+        if (!isFullPlaying) {
+            audio.src = currentPreviewUrl;
+            audio.currentTime = 0;
+            audio.play().then(() => {
+                isFullPlaying = true;
+                btn.innerText = "⏹ Zatrzymaj odsłuch";
+                btn.style.background = "linear-gradient(180deg, #e74c3c 0%, #c0392b 100%)";
+            }).catch(e => console.log('Błąd odsłuchu:', e));
+        } else {
+            audio.pause();
+            audio.currentTime = 0;
+            isFullPlaying = false;
+            btn.innerText = "🎧 Posłuchaj całości";
+            btn.style.background = "linear-gradient(180deg, #3a86ff 0%, #2563eb 100%)";
+        }
+    }
+
+    function handleFeedback(isKnown) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        if (isFullPlaying) {
+            audio.pause();
+            isFullPlaying = false;
+            const btn = document.getElementById('listenFullBtn');
+            if(btn) {
+                btn.innerText = "🎧 Posłuchaj całości";
+                btn.style.background = "linear-gradient(180deg, #3a86ff 0%, #2563eb 100%)";
+            }
+        }
+
+        playFeedbackSound(isKnown);
+
+        let fb = document.getElementById('feedbackBtns');
+        if (fb) fb.style.display = 'none';
+
+        if (isReviewMode) {
+            if (isKnown) {
+                removeReviewSong(selectedSong.query);
+            }
+        } else {
+            if (!isKnown) {
+                addReviewSong(selectedSong);
+            }
+        }
+    }
+
+    function backToCategories() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        if (isFullPlaying) {
+            audio.pause();
+            isFullPlaying = false;
+        }
+
+        const stopReactionAudio = document.getElementById('stopReactionAudio');
+        if (stopReactionAudio) {
+            stopReactionAudio.pause();
+            stopReactionAudio.currentTime = 0;
+        }
+
+        document.getElementById('gameScreen').style.display = 'none';
+        
+        if (playedIds.length >= activeCategoriesSet.length) {
+            showSummaryScreen();
+        } else {
+            document.getElementById('categoryScreen').style.display = 'block';
+            renderCategories();
+        }
+    }
+
+    function showSummaryScreen() {
+        document.getElementById('summaryScreen').style.display = 'block';
+        document.getElementById('totalMoneyDisplay').innerText = totalSessionMoney;
+        homeBtn.style.display = 'flex';
+        updateReviewMenuButton();
+    }
+
+    window.onload = function() {
+        updateReviewMenuButton();
+    };
+</script>
+
+</body>
+</html>
