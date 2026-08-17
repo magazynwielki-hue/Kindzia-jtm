@@ -23,7 +23,7 @@
             touch-action: manipulation; 
         }
         
-        /* CZYSTE PEŁNOEKRANOWE TŁO BEZ KONFLIKTÓW WARSTW */
+        /* JEDNOLITE TŁO I BLOKADA SCROLLA DLA PC I TELEFONU */
         html, body {
             width: 100%;
             height: 100%;
@@ -45,13 +45,13 @@
             -webkit-touch-callout: none;
         }
 
-        /* CANVAS DOKŁADNIE 1:1 Z ROZDZIELCZOŚCIĄ EKRANU */
+        /* CANVAS DOKŁADNIE 1:1 NA CAŁY EKRAN — BEZ ROZCIĄGANIA */
         #fxCanvas { 
             position: fixed; 
             top: 0; 
             left: 0; 
-            width: 100%; 
-            height: 100%;
+            width: 100vw; 
+            height: 100vh; 
             pointer-events: none; 
             z-index: 1; 
         }
@@ -590,7 +590,7 @@
     }
 
     // =========================================================================
-    // SILNIK CZĄSTECZEK — JEDNOLITY DLA PC I TELEFONÓW (BEZ JITTERA)
+    // SILNIK EFEKTÓW — DOKŁADNIE JAK NA PC, ZERO JITTERA I PŁYNNY FADE-OUT
     // =========================================================================
     const canvas = document.getElementById('fxCanvas');
     const ctx = canvas.getContext('2d');
@@ -642,7 +642,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         spotlightAngle += 0.015;
 
-        // Reflektory
+        // Reflektory sceniczne
         ctx.save();
         ctx.globalAlpha = 0.12;
 
@@ -665,16 +665,16 @@
         ctx.fill();
         ctx.restore();
 
-        // Nutki — renderowanie bez blur-filtru dla 100% stabilności na GPU telefonów
+        // Płynna animacja nutek z naturalnym rozmyciem po wyłączeniu muzyki
         for (let i = musicNotes.length - 1; i >= 0; i--) {
             const n = musicNotes[i];
             n.y -= n.vy; 
             n.x += n.vx;
 
             if (!isSpawningEffects) {
-                n.alpha -= 0.018; // Płynny 60fps fade-out po zatrzymaniu czołówki
-            } else if (n.y < canvas.height * 0.22) {
-                n.alpha -= 0.014;
+                n.alpha -= 0.014; // Miękki, 60fps fade out (ok. 1.2s rozpuszczania w tle)
+            } else if (n.y < canvas.height * 0.2) {
+                n.alpha -= 0.015; // Naturalne wygaszanie pod sufitem
             }
 
             if (n.alpha > 0) {
@@ -686,18 +686,18 @@
                 ctx.restore();
             }
 
-            if (n.y < -40 || n.alpha <= 0) {
+            if (n.y < -50 || n.alpha <= 0) {
                 musicNotes.splice(i, 1);
             }
         }
 
-        // Cząsteczki
+        // Animacja cząsteczek fajerwerków
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
             p.x += p.vx; 
             p.y += p.vy;
             p.vy += 0.12;
-            p.alpha -= isSpawningEffects ? 0.016 : 0.024;
+            p.alpha -= isSpawningEffects ? 0.016 : 0.025;
 
             if (p.alpha > 0) {
                 ctx.save();
@@ -866,13 +866,13 @@
         { category: "Sabrina Carpenter", query: "Please Please Please", title: "Please Please Please - Sabrina Carpenter" },
         { category: "Coma", query: "Leszek Zukowski", title: "Leszek Zukowski - Coma" },
         { category: "Fleetwood Mac", query: "Dreams", title: "Dreams - Fleetwood Mac" },
-        { category: "Dire Straits", query: "Money For Nothing", title: "Money For Nothing -标志Dire Straits" },
+        { category: "Dire Straits", query: "Money For Nothing", title: "Money For Nothing - Dire Straits" },
         { category: "Kult", query: "Do Ani", title: "Do Ani - Kult" },
         { category: "Dawid Podsiadło", query: "O czym śnisz?", title: "O czym śnisz? - Dawid Podsiadło & sanah" },
         { category: "Chappell Roan", query: "Good Luck, Babe!", title: "Good Luck, Babe! - Chappell Roan" },
         { category: "Jan Pietrzak", query: "Żeby Polska", title: "Żeby Polska - Jan Pietrzak" },
         { category: "Avicii", query: "Levels", title: "Levels - Avicii" },
-        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To Co Mam - Kasia Kowalska" },
+        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To标志Co Mam - Kasia Kowalska" },
         { category: "Stare Dobre Małżeństwo", query: "Czarny Blues O Czwartej Nad Ranem", title: "Czarny Blues O Czwartej Nad Ranem - Stare Dobre Małżeństwo" },
         { category: "Gigi D'Agostino", query: "L'amour toujours", title: "L'amour toujours - Gigi D'Agostino" },
         { category: "Metallica", query: "Nothing Else Matters", title: "Nothing Else Matters - Metallica" },
@@ -889,7 +889,7 @@
         { category: "Czerwone Gitary", query: "Płoną góry, płoną lasy", title: "Płoną góry, płoną lasy - Czerwone Gitary" },
         { category: "Blur", query: "Song 2", title: "Song 2 - Blur" },
         { category: "Brodka", query: "Granda", title: "Granda - Brodka" },
-        { category: "Michael Jackson", query: "The标志Way You Make Me Feel", title: "The Way You Make Me Feel - Michael Jackson" },
+        { category: "Michael Jackson", query: "The Way You Make Me Feel", title: "The Way You Make Me Feel - Michael Jackson" },
         { category: "Paktofonika", query: "Jestem Bogiem", title: "Jestem Bogiem - Męskie Granie Orkiestra & Paktofonika" },
         { category: "Frank Sinatra", query: "Theme from New York, New York", title: "Theme from New York, New York - Frank Sinatra" },
         { category: "Bolter", query: "Daj mi tę noc", title: "Daj mi tę noc - Bolter" },
@@ -917,14 +917,14 @@
         { category: "Ewelina Lisowska", query: "W Stronę Słońca", title: "W Stronę Słońca - Ewelina Lisowska" },
         { category: "Sarsa", query: "Naucz Mnie", title: "Naucz Mnie - Sarsa" },
         { category: "The Rolling Stones", query: "Start Me Up", title: "Start Me Up - The Rolling Stones" },
-        { category: "The Rolling Stones", query: "Satisfaction", title: "Satisfaction - The Rolling Stones" },
+        { category: "The Rolling Stones", query: "Satisfaction", title: "Satisfaction - The标志Rolling Stones" },
         { category: "Aerosmith", query: "Crazy", title: "Crazy - Aerosmith" },
         { category: "Aerosmith", query: "I Don't Want to Miss a Thing", title: "I Don't Want to Miss a Thing - Aerosmith" },
         { category: "Andrzej Rosiewicz", query: "Chłopcy Radarowcy", title: "Chłopcy Radarowcy - Andrzej Rosiewicz" },
         { category: "Andrzej Rosiewicz", query: "Najwięcej witaminy", title: "Najwięcej witaminy - Andrzej Rosiewicz" },
         { category: "Michał Bajor", query: "Ogrzej Mnie", title: "Ogrzej Mnie - Michał Bajor" },
         { category: "Budka Suflera", query: "Jolka, Jolka pamiętasz...", title: "Jolka, Jolka pamiętasz... - Budka Suflera" },
-        { category: "Krzysztof Kiljański", query: "Prócz Ciebie, Nic", title: "Prócz Ciebie, Nic - Krzysztof Kiljański" },
+        { category: "Krzysztof Kiljański", query: "Prócz Ciebie, Nic", title: "Prócz标志Ciebie, Nic - Krzysztof Kiljański" },
         { category: "Zdzisława Sośnicka & Zbigniew Wodecki", query: "Z tobą chcę oglądać świat", title: "Z tobą chcę oglądać świat - Zdzisława Sośnicka & Zbigniew Wodecki" },
         { category: "Krzysztof Krawczyk & Edyta Bartosiewicz", query: "Trudno Tak", title: "Trudno Tak - Krzysztof Krawczyk & Edyta Bartosiewicz" },
         { category: "Mieczysław Fogg", query: "Jesienne róże", title: "Jesienne róże - Mieczysław Fogg" },
@@ -973,7 +973,7 @@
         { category: "Mezo", query: "Ważne", title: "Ważne - Mezo" },
         { category: "Mezo", query: "Sacrum", title: "Sacrum - Mezo" },
         { category: "Jeden Osiem L", query: "Jak Zapomnieć", title: "Jak Zapomnieć - Jeden Osiem L" },
-        { category: "Golden Life", query: "Oprocz - Blekitnego Nieba", title: "Oprocz - Blekitnego Nieba -标志Golden Life" },
+        { category: "Golden Life", query: "Oprocz - Blekitnego Nieba", title: "Oprocz - Blekitnego Nieba - Golden Life" },
         { category: "Chłopcy z Placu Broni", query: "O Ela!", title: "O Ela! - Chłopcy z Placu Broni" },
         { category: "Sztywny Pal Azji", query: "Wieża radości, wieża samotności", title: "Wieża radości, wieża samotności - Sztywny Pal Azji" },
         { category: "IRA", query: "Wiara", title: "Wiara - IRA" },
@@ -1014,11 +1014,11 @@
         { category: "Haddaway", query: "What Is Love", title: "What Is Love - Haddaway" },
         { category: "Ace of Base", query: "All That She Wants", title: "All That She Wants - Ace of Base" },
         { category: "Pectus", query: "Barcelona", title: "Barcelona - Pectus" },
-        { category: "Pectus", query: "To Co Chciałbym Ci Dać", title: "To标志Co Chciałbym Ci Dać - Pectus" },
+        { category: "Pectus", query: "To Co Chciałbym Ci Dać", title: "To Co Chciałbym Ci Dać - Pectus" },
         { category: "Enej", query: "Kamien Z Napisem Love", title: "Kamien Z Napisem Love - Enej" },
         { category: "Enej", query: "Skrzydlate Ręce", title: "Skrzydlate Ręce - Enej" },
         { category: "Enej", query: "Radio Hello", title: "Radio Hello - Enej" },
-        { category: "Black Eyed Peas", query: "I标志Gotta Feeling", title: "I Gotta Feeling - Black Eyed Peas" },
+        { category: "Black Eyed Peas", query: "I Gotta Feeling", title: "I Gotta Feeling - Black Eyed Peas" },
         { category: "Shakira", query: "Whenever, Wherever", title: "Whenever, Wherever - Shakira" },
         { category: "Shakira", query: "Waka Waka", title: "Waka Waka - Shakira" },
         { category: "Rihanna", query: "Umbrella", title: "Umbrella - Rihanna" },
@@ -1049,7 +1049,7 @@
         { category: "Feel", query: "No pokaz Na Co Cie Stac", title: "No pokaz Na Co Cie Stac - Feel" },
         { category: "Feel", query: "A Gdy Jest Juz Ciemno", title: "A Gdy Jest Juz Ciemno - Feel" },
         { category: "Kwiat Jabłoni", query: "Od nowa", title: "Od nowa - Kwiat Jabłoni" },
-        { category: "Kwiat Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś Późno Pójdę Spać - Kwiat Jabłoni" },
+        { category: "Kwiat标志Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś Późno Pójdę Spać - Kwiat Jabłoni" },
         { category: "Daria Zawiałow", query: "Kaonashi", title: "Kaonashi - Daria Zawiałow" },
         { category: "Mrozu", query: "Aura", title: "Aura - Mrozu" },
         { category: "Mrozu", query: "Jak Nie My To Kto", title: "Jak Nie My To Kto - Mrozu" },
@@ -1099,7 +1099,7 @@
         { category: "Ricchi e Poveri", query: "Sarà Perché Ti Amo", title: "Sarà Perché Ti Amo - Ricchi & Poveri" },
         { category: "Toto Cutugno", query: "Solo noi", title: "Solo noi - Toto Cutugno" },
         { category: "Toto Cutugno", query: "L'italiano", title: "L'italiano - Toto Cutugno" },
-        { category: "Al Bano & Romina Power", query: "Ci Sarà", title: "Ci Sarà - Al Bano Carrisi & Romina Power" },
+        { category: "Al Bano & Romina Power", query: "Ci标志Sarà", title: "Ci Sarà - Al Bano Carrisi & Romina Power" },
         { category: "Al Bano & Romina Power", query: "Felicità", title: "Felicità - Al Bano Carrisi & Romina Power" },
         { category: "Andrzej Piaseczny", query: "Chodz, Przytul, Przebacz", title: "Chodz, Przytul, Przebacz - Andrzej Piaseczny" },
         { category: "De Mono", query: "Statki Na Niebie", title: "Statki Na Niebie - De Mono" },
@@ -1108,7 +1108,7 @@
         { category: "Varius Manx", query: "Zanim Zrozumiesz", title: "Zanim Zrozumiesz - Kasia Stankiewicz & Varius Manx" },
         { category: "Varius Manx", query: "Orła Cień", title: "Orła Cień - Kasia Stankiewicz & Varius Manx" },
         { category: "Maryla Rodowicz", query: "Dziś Prawdziwych Cyganów Już Nie Ma", title: "Dziś Prawdziwych Cyganów Już Nie Ma - Maryla Rodowicz" },
-        { category: "Bajm", query: "Józek, Nie Daruje Ci标志Tej Nocy", title: "Józek, Nie Daruje Ci Tej Nocy - Bajm" },
+        { category: "Bajm", query: "Józek, Nie Daruje Ci Tej Nocy", title: "Józek, Nie Daruje Ci Tej Nocy - Bajm" },
         { category: "Wilki", query: "Baśka", title: "Baśka - Wilki" },
         { category: "Kayah", query: "Prawy do lewego", title: "Prawy do lewego - Goran Bregović & Kayah" },
         { category: "Kayah", query: "Śpij kochanie, śpij", title: "Śpij kochanie, śpij - Goran Bregović & Kayah" },
@@ -1144,7 +1144,7 @@
         { category: "Niebiesko-Czarni", query: "Mamo, Nasza Mamo", title: "Mamo, Nasza Mamo - Niebiesko-Czarni" },
         { category: "Kabaret TEY", query: "Piosenka jest dobra na wszystko", title: "Piosenka jest dobra na wszystko - Kabaret Starszych Panów" },
         { category: "Lao Che", query: "Hydropiekłowstąpienie", title: "Hydropiekłowstąpienie - Lao Che" },
-        { category: "Pidżama Porno", query: "Nikt Tak Pięknie Nie Mówił Że Się Boi Miłości", title: "Nikt Tak Pięknie Nie Mówił Że标志Się Boi Miłości - Pidżama Porno" },
+        { category: "Pidżama Porno", query: "Nikt Tak Pięknie Nie Mówił Że Się Boi Miłości", title: "Nikt Tak Pięknie Nie Mówił Że Się Boi Miłości - Pidżama Porno" },
         { category: "Mrozu", query: "Palę w oknie", title: "Palę w oknie - Męskie Granie Orkiestra & Mrozu" },
         { category: "Dawid Podsiadło", query: "Nikt tak pięknie nie mówił, że się boi miłości", title: "Nikt tak pięknie nie mówił, że się boi miłości - Męskie Granie Orkiestra, Daria Zawiałow & Dawid Podsiadło" },
         { category: "Szwagierkolas", query: "U Cioci Na Imieninach", title: "U Cioci Na Imieninach - Szwagierkolaska" },
@@ -1182,7 +1182,7 @@
         { category: "Czerwone Gitary", query: "Anna Maria", title: "Anna Maria - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Nikt Na Swiecie Nie Wie", title: "Nikt Na Swiecie Nie Wie - Czerwone Gitary & Orkiestra Symfoników Gdańskich" },
         { category: "Czerwone Gitary", query: "Matura", title: "Matura - Czerwone Gitary" },
-        { category: "Czerwone Gitary", query: "Nie Zadzieraj Nosa", title: "Nie Zadzieraj Nosa - Czerwone Gitary" },
+        { category: "Nie Zadzieraj Nosa", query: "Nie Zadzieraj Nosa", title: "Nie Zadzieraj Nosa - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Tak Bardzo Sie Staralem", title: "Tak Bardzo Sie Staralem - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Dozwolone Do Lat Osiemnastu", title: "Dozwolone Do Lat Osiemnastu - Czerwone Gitary" },
         { category: "Ryszard Rynkowski", query: "Dziewczyny Lubią Brąz", title: "Dziewczyny Lubią Brąz - Ryszard Rynkowski" },
@@ -1391,7 +1391,7 @@
         { category: "Kamil Bednarek", query: "Chwile jak Te", title: "Chwile jak Te - Kamil Bednarek" },
         { category: "Kamil Bednarek", query: "List", title: "List - Kamil Bednarek" },
         { category: "Bee Gees", query: "Stayin' Alive", title: "Stayin' Alive - Bee Gees" },
-        { category: "Bee标志Gees", query: "Night Fever", title: "Night Fever - Bee Gees" },
+        { category: "Bee Gees", query: "Night Fever", title: "Night Fever - Bee Gees" },
         { category: "Gloria Gaynor", query: "I Will Survive", title: "I Will Survive - Gloria Gaynor" },
         { category: "Earth, Wind & Fire", query: "September", title: "September - Earth, Wind & Fire" },
         { category: "Village People", query: "YMCA", title: "YMCA - Village People" },
@@ -1437,7 +1437,7 @@
         { category: "Republika", query: "Biała Flaga", title: "Biała Flaga - Republika" },
         { category: "Republika", query: "Telefony", title: "Telefony - Republika" },
         { category: "Republika", query: "Mamona", title: "Mamona - Republika" },
-        { category: "Obywatel G.C.", query: "Nie Pytaj O Polskę", title: "Nie Pytaj O Polskę - Obywatel G.C." },
+        { category: "Obywatel G.C.", query: "Nie Pytaj O Polskę", title: "Nie标志Pytaj O Polskę - Obywatel G.C." },
         { category: "Obywatel G.C.", query: "Tak ... Tak ... To Ja", title: "Tak ... Tak ... To Ja - Obywatel G.C." },
         { category: "Hey", query: "Teksanski", title: "Teksanski - Hey" },
         { category: "Hey", query: "Moja i Twoja Nadzieja", title: "Moja i Twoja Nadzieja - Hey" },
@@ -1556,21 +1556,21 @@
         { category: "Maanam", query: "Parada Sloni I Roza", title: "Parada Sloni I Roza - Maanam" },
         { category: "The Art Company", query: "Susanna", title: "Susanna - The Art Company" },
         { category: "Raffaella Carrà", query: "A far l'amore comincia tu", title: "A far l'amore comincia tu - Raffaella Carrà" },
-        { category: "Los Lobos", query: "La Bamba", title: "La Bamba - Los Lobos" },
+        { category: "Los Lobos", query: "La Bamba", title: "La Bamba - Los标志Lobos" },
         { category: "Krzysztof Zalewski", query: "Miłość Miłość", title: "Miłość Miłość - Krzysztof Zalewski" },
         { category: "IGO", query: "Helena", title: "Helena - IGO" },
         { category: "Smolasty", query: "Duże oczy", title: "Duże oczy - Smolasty, Pedro & francis" },
         { category: "Kombi", query: "Kochać cię za późno", title: "Kochać cię za późno - Kombi" },
         { category: "Lombard", query: "Gołębi Puch", title: "Gołębi Puch - Lombard" },
         { category: "Kapitan Nemo", query: "Twoja Lorelei", title: "Twoja Lorelei - Kapitan Nemo" },
-        { category: "Krystyna Prońko", query: "Psalm Stojących W Kolejce", title: "Psalm Stojących W Kolejce -标志Krystyna Prońko" },
+        { category: "Krystyna Prońko", query: "Psalm Stojących W Kolejce", title: "Psalm Stojących W Kolejce - Krystyna Prońko" },
         { category: "Felicjan Andrzejczak", query: "Noc komety", title: "Noc komety - Felicjan Andrzejczak" },
         { category: "Roy Orbison", query: "Oh, Pretty Woman", title: "Oh, Pretty Woman - Roy Orbison" },
         { category: "Shirley Bassey", query: "Diamonds Are Forever", title: "Diamonds Are Forever - Shirley Bassey" },
         { category: "Paul Anka", query: "Diana", title: "Diana - Paul Anka" },
         { category: "Dean Martin", query: "That's Amore", title: "That's Amore - Dean Martin" },
         { category: "Paktofonika", query: "Chwile Ulotne", title: "Chwile Ulotne - Paktofonika" },
-        { category: "Kaliber 44", query: "Normalnie O标志Tej Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
+        { category: "Kaliber 44", query: "Normalnie O Tej Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
         { category: "Liroy", query: "Moja Autobiografia", title: "Moja Autobiografia - Liroy" },
         { category: "WWO", query: "Każdy ponad każdym", title: "Każdy ponad każdym - White House, Sokół & WWO" },
         { category: "Michael Jackson", query: "Man in the Mirror", title: "Man in the Mirror - Michael Jackson" },
@@ -1611,7 +1611,7 @@
         { category: "Joe Cocker", query: "Up Where We Belong", title: "Up Where We Belong - Joe Cocker & Jennifer Warnes" },
         { category: "Joe Cocker", query: "Unchain My Heart", title: "Unchain My Heart - Joe Cocker" },
         { category: "Wojciech Młynarski", query: "Jesteśmy na Wczasach", title: "Jesteśmy na Wczasach - Wojciech Młynarski" },
-        { category: "Wojciech Młynarski", query: "Róbmy Swoje", title: "Róbmy Swoje - Wojciech Młynarski" },
+        { category: "Wojciech Młynarski", query: "Róbmy Swoje", title: "Róbmy标志Swoje - Wojciech Młynarski" },
         { category: "Wojciech Młynarski", query: "Dziewczyny Bądźcie dla Nas Dobre na Wiosnę", title: "Dziewczyny Bądźcie dla Nas Dobre na Wiosnę - Wojciech Młynarski" },
         { category: "Wojciech Młynarski", query: "Absolutnie", title: "Absolutnie - Wojciech Młynarski" },
         { category: "Lionel Richie", query: "All Night Long", title: "All Night Long - Lionel Richie" },
@@ -1739,7 +1739,7 @@
         { category: "Culture Club", query: "Do You Really Want to Hurt Me", title: "Do You Really Want to Hurt Me - Culture Club" },
         { category: "Culture Club", query: "Karma Chameleon", title: "Karma Chameleon - Culture Club" },
         { category: "The Cars", query: "Drive", title: "Drive - The Cars" },
-        { category: "Supertramp", query: "The Logical Song", title: "The标志Logical Song - Supertramp" },
+        { category: "Supertramp", query: "The Logical Song", title: "The Logical Song - Supertramp" },
         { category: "The Moody Blues", query: "Nights In White Satin", title: "Nights In White Satin - The Moody Blues" },
         { category: "Nazareth", query: "Love Hurts", title: "Love Hurts - Nazareth" },
         { category: "Natalia Przybysz", query: "Miod", title: "Miod - Natalia Przybysz" },
@@ -1753,7 +1753,7 @@
         { category: "Pitbull", query: "Timber", title: "Timber - Pitbull & Kesha" },
         { category: "Pitbull", query: "Give Me Everything", title: "Give Me Everything - Pitbull" },
         { category: "Pitbull", query: "I Know You Want Me", title: "I Know You Want Me - Pitbull" },
-        { category: "Rihanna", query: "Don't Stop the Music", title: "Don't Stop the Music - The Treblemakers" },
+        { category: "Rihanna", query: "Don't Stop the Music", title: "Don't标志Stop the Music - The Treblemakers" },
         { category: "Katy Perry", query: "Roar", title: "Roar - Katy Perry" },
         { category: "Katy Perry", query: "Firework", title: "Firework - Katy Perry" },
         { category: "Katy Perry", query: "Dark Horse", title: "Dark Horse - Katy Perry" },
@@ -1776,7 +1776,7 @@
         { category: "IGNACY", query: "Czekam Na Znak", title: "Czekam Na Znak - IGNACY" },
         { category: "Brodka", query: "Game Change", title: "Game Change - Brodka" },
         { category: "IGO", query: "Na Spokojnie", title: "Na Spokojnie - DrySkull & IGO" },
-        { category: "David Guetta", query: "Baby Don't Hurt Me", title: "Baby Don't Hurt Me - David Guetta, Anne-Marie & Coi Roz" },
+        { category: "David Guetta", query: "Baby Don't Hurt Me", title: "Baby Don't Hurt Me - David Guetta, Anne-Marie & Coi Leray" },
         { category: "Tiësto", query: "Lay Low", title: "Lay Low - Tiësto" },
         { category: "Coi Leray", query: "Players", title: "Players - Coi Leray" },
         { category: "Van Halen", query: "Jump", title: "Jump - Van Halen" },
@@ -2195,7 +2195,7 @@
     function cleanAppleText(str) {
         return String(str || "")
             .normalize("NFD")
-            .replace(/[̀-ͯ]/g, "")
+            .replace(/[\u0300-\u036f]/g, "")
             .replace(/ł/g, "l")
             .replace(/Ł/g, "L")
             .toLowerCase();
