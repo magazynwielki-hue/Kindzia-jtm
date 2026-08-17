@@ -23,30 +23,18 @@
             touch-action: manipulation; 
         }
         
-        /* ZRESETOWANIE MARGINESÓW I PEŁNA BLOKADA EKRANU */
+        /* CZYSTE PEŁNOEKRANOWE TŁO BEZ KONFLIKTÓW WARSTW */
         html, body {
             width: 100%;
             height: 100%;
-            position: fixed; /* Absolutna blokada scrollowania na iOS/PC */
+            position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             overflow: hidden;
             overscroll-behavior: none;
             margin: 0;
             padding: 0;
             background-color: #020611;
-        }
-
-        /* NIESKOŃCZONE TŁO */
-        body::before {
-            content: '';
-            position: absolute;
-            top: -100px; left: -100px; right: -100px; bottom: -100px;
             background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
-            z-index: -2;
-            pointer-events: none;
-        }
-
-        body {
             font-family: 'Segoe UI', Arial, sans-serif;
             color: #ffffff;
             display: flex;
@@ -57,15 +45,15 @@
             -webkit-touch-callout: none;
         }
 
-        /* CANVAS DLA EFEKTÓW — JEDNOLITY DLA DESKTOP I MOBILE */
+        /* CANVAS DOKŁADNIE 1:1 Z ROZDZIELCZOŚCIĄ EKRANU */
         #fxCanvas { 
             position: fixed; 
-            top: -50px; 
+            top: 0; 
             left: 0; 
-            width: 100vw; 
-            height: calc(100vh + 150px);
+            width: 100%; 
+            height: 100%;
             pointer-events: none; 
-            z-index: 0; 
+            z-index: 1; 
         }
 
         /* PRZYCISK HOME DOPASOWANY DO NOTCHA */
@@ -388,40 +376,7 @@
         .btn-split-lang:active { transform: scale(0.95); }
         .status-msg { color: #8ecae6; font-size: 13px; margin-bottom: 3px; font-style: italic; }
         .status-msg button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
-    
-        @media (max-width: 767px) {
-            html {
-                width: 100%;
-                min-height: 100%;
-                background: #020611;
-                overflow: hidden;
-            }
-
-            html::before {
-                content: '';
-                position: fixed;
-                z-index: -10;
-                left: -80px;
-                top: -80px;
-                width: calc(100% + 160px);
-                height: calc(100% + 160px);
-                background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
-                pointer-events: none;
-            }
-
-            body {
-                background: transparent;
-                isolation: isolate;
-            }
-
-            .card {
-                z-index: 10;
-                margin: auto;
-            }
-
-            .home-btn { z-index: 99999; }
-        }
-</style>
+    </style>
 </head>
 <body>
 
@@ -549,7 +504,6 @@
     let clickAudioContext = null;
     let uiAudioCtx = null;
 
-    // Blokada zoomu i przesuwania na iOS
     document.addEventListener('gesturestart', function (e) {
         e.preventDefault();
     });
@@ -636,26 +590,15 @@
     }
 
     // =========================================================================
-    // CANVAS ENGINE — PEŁNE WSPARCIE HIGH-DPI RETINA ORAZ CIĄGŁEJ INTERPOLACJI
+    // SILNIK CZĄSTECZEK — JEDNOLITY DLA PC I TELEFONÓW (BEZ JITTERA)
     // =========================================================================
     const canvas = document.getElementById('fxCanvas');
-    const ctx = canvas.getContext('2d', { alpha: true });
-    
-    let logicalWidth = 0;
-    let logicalHeight = 0;
+    const ctx = canvas.getContext('2d');
 
     function resizeCanvas() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2.5); // Limit do 2.5 dla optymalizacji baterii/GPU
-        logicalWidth = window.innerWidth || document.documentElement.clientWidth;
-        logicalHeight = (window.innerHeight || document.documentElement.clientHeight) + 150;
-        
-        canvas.width = Math.round(logicalWidth * dpr);
-        canvas.height = Math.round(logicalHeight * dpr);
-        
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.scale(dpr, dpr);
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
-
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', resizeCanvas);
@@ -664,11 +607,11 @@
     let musicNotes = [];
     let spotlightAngle = 0;
     let effectTimer = null;
-    let isFadingOut = false;
+    let isSpawningEffects = false;
 
     function createFirework(x, y) {
         const colors = ['#ffb703', '#2ecc71', '#00d4ff', '#e74c3c', '#9b59b6', '#ffffff'];
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 35; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 6 + 2;
             particles.push({
@@ -685,54 +628,53 @@
     function createMusicNote() {
         const notesSymbols = ['♪', '♫', '♬', '♩'];
         musicNotes.push({
-            x: Math.random() * (logicalWidth - 60) + 30,
-            y: logicalHeight + 10,
+            x: Math.random() * (canvas.width - 60) + 30,
+            y: canvas.height + 25,
             vy: Math.random() * 2.2 + 1.8,
             vx: (Math.random() - 0.5) * 1.5,
             alpha: 1,
             symbol: notesSymbols[Math.floor(Math.random() * notesSymbols.length)],
-            size: Math.random() * 10 + 24
+            size: Math.random() * 12 + 22
         });
     }
 
     function animateStudio() {
-        ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         spotlightAngle += 0.015;
 
-        // Reflektory sceniczne
+        // Reflektory
         ctx.save();
         ctx.globalAlpha = 0.12;
 
-        let grad1 = ctx.createLinearGradient(0, 0, logicalWidth / 2 + Math.sin(spotlightAngle) * 350, logicalHeight);
+        let grad1 = ctx.createLinearGradient(0, 0, canvas.width / 2 + Math.sin(spotlightAngle) * 350, canvas.height);
         grad1.addColorStop(0, '#00d4ff'); grad1.addColorStop(1, 'transparent');
         ctx.fillStyle = grad1;
         ctx.beginPath(); 
         ctx.moveTo(0, 0); 
-        ctx.lineTo(logicalWidth / 2 + Math.sin(spotlightAngle) * 450, logicalHeight); 
-        ctx.lineTo(0, logicalHeight); 
+        ctx.lineTo(canvas.width / 2 + Math.sin(spotlightAngle) * 450, canvas.height); 
+        ctx.lineTo(0, canvas.height); 
         ctx.fill();
 
-        let grad2 = ctx.createLinearGradient(logicalWidth, 0, logicalWidth / 2 - Math.sin(spotlightAngle) * 350, logicalHeight);
+        let grad2 = ctx.createLinearGradient(canvas.width, 0, canvas.width / 2 - Math.sin(spotlightAngle) * 350, canvas.height);
         grad2.addColorStop(0, '#ffb703'); grad2.addColorStop(1, 'transparent');
         ctx.fillStyle = grad2;
         ctx.beginPath(); 
-        ctx.moveTo(logicalWidth, 0); 
-        ctx.lineTo(logicalWidth / 2 - Math.sin(spotlightAngle) * 450, logicalHeight); 
-        ctx.lineTo(logicalWidth, logicalHeight); 
+        ctx.moveTo(canvas.width, 0); 
+        ctx.lineTo(canvas.width / 2 - Math.sin(spotlightAngle) * 450, canvas.height); 
+        ctx.lineTo(canvas.width, canvas.height); 
         ctx.fill();
         ctx.restore();
 
-        // 1. Animacja i renderowanie nutek (płynne współrzędne subpikselowe bez skoków)
+        // Nutki — renderowanie bez blur-filtru dla 100% stabilności na GPU telefonów
         for (let i = musicNotes.length - 1; i >= 0; i--) {
             const n = musicNotes[i];
             n.y -= n.vy; 
             n.x += n.vx;
 
-            // Stopniowe wygaszanie pod sufitem lub w trakcie globalnego fade-outu
-            if (isFadingOut) {
-                n.alpha -= 0.018; // Płynne 60fps rozmywanie po zakończeniu muzyki
-            } else if (n.y < logicalHeight * 0.25) {
-                n.alpha -= 0.012;
+            if (!isSpawningEffects) {
+                n.alpha -= 0.018; // Płynny 60fps fade-out po zatrzymaniu czołówki
+            } else if (n.y < canvas.height * 0.22) {
+                n.alpha -= 0.014;
             }
 
             if (n.alpha > 0) {
@@ -740,29 +682,22 @@
                 ctx.globalAlpha = Math.max(0, Math.min(1, n.alpha));
                 ctx.fillStyle = '#ffd700';
                 ctx.font = `bold ${n.size}px Arial, sans-serif`;
-                ctx.shadowColor = '#ffb703'; 
-                ctx.shadowBlur = 10;
-                ctx.fillText(n.symbol, n.x, n.y); // Ciągłe współrzędne float
+                ctx.fillText(n.symbol, n.x, n.y);
                 ctx.restore();
             }
 
-            if (n.y < -50 || n.alpha <= 0) {
+            if (n.y < -40 || n.alpha <= 0) {
                 musicNotes.splice(i, 1);
             }
         }
 
-        // 2. Animacja i renderowanie cząsteczek
+        // Cząsteczki
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
             p.x += p.vx; 
             p.y += p.vy;
             p.vy += 0.12;
-            
-            if (isFadingOut) {
-                p.alpha -= 0.022;
-            } else {
-                p.alpha -= 0.016;
-            }
+            p.alpha -= isSpawningEffects ? 0.016 : 0.024;
 
             if (p.alpha > 0) {
                 ctx.save();
@@ -779,33 +714,29 @@
             }
         }
 
-        if (isFadingOut && musicNotes.length === 0 && particles.length === 0) {
-            isFadingOut = false;
-        }
-
         requestAnimationFrame(animateStudio);
     }
     animateStudio();
 
     function startStudioShowEffects() {
-        isFadingOut = false;
+        isSpawningEffects = true;
         if (effectTimer) clearInterval(effectTimer);
         effectTimer = setInterval(() => {
-            const rx = Math.random() * (logicalWidth - 150) + 75;
-            const ry = Math.random() * (logicalHeight * 0.55);
+            if (!isSpawningEffects) return;
+            const rx = Math.random() * (canvas.width - 150) + 75;
+            const ry = Math.random() * (canvas.height * 0.55);
             createFirework(rx, ry);
             createMusicNote();
             createMusicNote();
         }, 280);
     }
 
-    // Płynne wygaszanie zarządzane bezpośrednio w 60fps wewnątrz animateStudio (bez setInterval)
     function stopStudioShowEffects() {
+        isSpawningEffects = false;
         if (effectTimer) { 
             clearInterval(effectTimer); 
             effectTimer = null; 
         }
-        isFadingOut = true;
     }
 
     function typeWriterEffect(text, elementId, speed = 45) {
@@ -935,7 +866,7 @@
         { category: "Sabrina Carpenter", query: "Please Please Please", title: "Please Please Please - Sabrina Carpenter" },
         { category: "Coma", query: "Leszek Zukowski", title: "Leszek Zukowski - Coma" },
         { category: "Fleetwood Mac", query: "Dreams", title: "Dreams - Fleetwood Mac" },
-        { category: "Dire Straits", query: "Money For Nothing", title: "Money For Nothing - Dire Straits" },
+        { category: "Dire Straits", query: "Money For Nothing", title: "Money For Nothing -标志Dire Straits" },
         { category: "Kult", query: "Do Ani", title: "Do Ani - Kult" },
         { category: "Dawid Podsiadło", query: "O czym śnisz?", title: "O czym śnisz? - Dawid Podsiadło & sanah" },
         { category: "Chappell Roan", query: "Good Luck, Babe!", title: "Good Luck, Babe! - Chappell Roan" },
@@ -958,7 +889,7 @@
         { category: "Czerwone Gitary", query: "Płoną góry, płoną lasy", title: "Płoną góry, płoną lasy - Czerwone Gitary" },
         { category: "Blur", query: "Song 2", title: "Song 2 - Blur" },
         { category: "Brodka", query: "Granda", title: "Granda - Brodka" },
-        { category: "Michael Jackson", query: "The Way You Make Me Feel", title: "The Way You Make Me Feel - Michael Jackson" },
+        { category: "Michael Jackson", query: "The标志Way You Make Me Feel", title: "The Way You Make Me Feel - Michael Jackson" },
         { category: "Paktofonika", query: "Jestem Bogiem", title: "Jestem Bogiem - Męskie Granie Orkiestra & Paktofonika" },
         { category: "Frank Sinatra", query: "Theme from New York, New York", title: "Theme from New York, New York - Frank Sinatra" },
         { category: "Bolter", query: "Daj mi tę noc", title: "Daj mi tę noc - Bolter" },
@@ -1042,7 +973,7 @@
         { category: "Mezo", query: "Ważne", title: "Ważne - Mezo" },
         { category: "Mezo", query: "Sacrum", title: "Sacrum - Mezo" },
         { category: "Jeden Osiem L", query: "Jak Zapomnieć", title: "Jak Zapomnieć - Jeden Osiem L" },
-        { category: "Golden Life", query: "Oprocz - Blekitnego Nieba", title: "Oprocz - Blekitnego Nieba - Golden Life" },
+        { category: "Golden Life", query: "Oprocz - Blekitnego Nieba", title: "Oprocz - Blekitnego Nieba -标志Golden Life" },
         { category: "Chłopcy z Placu Broni", query: "O Ela!", title: "O Ela! - Chłopcy z Placu Broni" },
         { category: "Sztywny Pal Azji", query: "Wieża radości, wieża samotności", title: "Wieża radości, wieża samotności - Sztywny Pal Azji" },
         { category: "IRA", query: "Wiara", title: "Wiara - IRA" },
@@ -1083,11 +1014,11 @@
         { category: "Haddaway", query: "What Is Love", title: "What Is Love - Haddaway" },
         { category: "Ace of Base", query: "All That She Wants", title: "All That She Wants - Ace of Base" },
         { category: "Pectus", query: "Barcelona", title: "Barcelona - Pectus" },
-        { category: "Pectus", query: "To Co Chciałbym Ci Dać", title: "To Co Chciałbym Ci Dać - Pectus" },
+        { category: "Pectus", query: "To Co Chciałbym Ci Dać", title: "To标志Co Chciałbym Ci Dać - Pectus" },
         { category: "Enej", query: "Kamien Z Napisem Love", title: "Kamien Z Napisem Love - Enej" },
         { category: "Enej", query: "Skrzydlate Ręce", title: "Skrzydlate Ręce - Enej" },
         { category: "Enej", query: "Radio Hello", title: "Radio Hello - Enej" },
-        { category: "Black Eyed Peas", query: "I Gotta Feeling", title: "I Gotta Feeling - Black Eyed Peas" },
+        { category: "Black Eyed Peas", query: "I标志Gotta Feeling", title: "I Gotta Feeling - Black Eyed Peas" },
         { category: "Shakira", query: "Whenever, Wherever", title: "Whenever, Wherever - Shakira" },
         { category: "Shakira", query: "Waka Waka", title: "Waka Waka - Shakira" },
         { category: "Rihanna", query: "Umbrella", title: "Umbrella - Rihanna" },
@@ -1177,7 +1108,7 @@
         { category: "Varius Manx", query: "Zanim Zrozumiesz", title: "Zanim Zrozumiesz - Kasia Stankiewicz & Varius Manx" },
         { category: "Varius Manx", query: "Orła Cień", title: "Orła Cień - Kasia Stankiewicz & Varius Manx" },
         { category: "Maryla Rodowicz", query: "Dziś Prawdziwych Cyganów Już Nie Ma", title: "Dziś Prawdziwych Cyganów Już Nie Ma - Maryla Rodowicz" },
-        { category: "Bajm", query: "Józek, Nie Daruje Ci Tej Nocy", title: "Józek, Nie Daruje Ci Tej Nocy - Bajm" },
+        { category: "Bajm", query: "Józek, Nie Daruje Ci标志Tej Nocy", title: "Józek, Nie Daruje Ci Tej Nocy - Bajm" },
         { category: "Wilki", query: "Baśka", title: "Baśka - Wilki" },
         { category: "Kayah", query: "Prawy do lewego", title: "Prawy do lewego - Goran Bregović & Kayah" },
         { category: "Kayah", query: "Śpij kochanie, śpij", title: "Śpij kochanie, śpij - Goran Bregović & Kayah" },
@@ -1213,7 +1144,7 @@
         { category: "Niebiesko-Czarni", query: "Mamo, Nasza Mamo", title: "Mamo, Nasza Mamo - Niebiesko-Czarni" },
         { category: "Kabaret TEY", query: "Piosenka jest dobra na wszystko", title: "Piosenka jest dobra na wszystko - Kabaret Starszych Panów" },
         { category: "Lao Che", query: "Hydropiekłowstąpienie", title: "Hydropiekłowstąpienie - Lao Che" },
-        { category: "Pidżama Porno", query: "Nikt Tak Pięknie Nie Mówił Że Się Boi Miłości", title: "Nikt Tak Pięknie Nie Mówił Że Się Boi Miłości - Pidżama Porno" },
+        { category: "Pidżama Porno", query: "Nikt Tak Pięknie Nie Mówił Że Się Boi Miłości", title: "Nikt Tak Pięknie Nie Mówił Że标志Się Boi Miłości - Pidżama Porno" },
         { category: "Mrozu", query: "Palę w oknie", title: "Palę w oknie - Męskie Granie Orkiestra & Mrozu" },
         { category: "Dawid Podsiadło", query: "Nikt tak pięknie nie mówił, że się boi miłości", title: "Nikt tak pięknie nie mówił, że się boi miłości - Męskie Granie Orkiestra, Daria Zawiałow & Dawid Podsiadło" },
         { category: "Szwagierkolas", query: "U Cioci Na Imieninach", title: "U Cioci Na Imieninach - Szwagierkolaska" },
@@ -1460,7 +1391,7 @@
         { category: "Kamil Bednarek", query: "Chwile jak Te", title: "Chwile jak Te - Kamil Bednarek" },
         { category: "Kamil Bednarek", query: "List", title: "List - Kamil Bednarek" },
         { category: "Bee Gees", query: "Stayin' Alive", title: "Stayin' Alive - Bee Gees" },
-        { category: "Bee Gees", query: "Night Fever", title: "Night Fever - Bee Gees" },
+        { category: "Bee标志Gees", query: "Night Fever", title: "Night Fever - Bee Gees" },
         { category: "Gloria Gaynor", query: "I Will Survive", title: "I Will Survive - Gloria Gaynor" },
         { category: "Earth, Wind & Fire", query: "September", title: "September - Earth, Wind & Fire" },
         { category: "Village People", query: "YMCA", title: "YMCA - Village People" },
@@ -1487,7 +1418,7 @@
         { category: "Męskie Granie Orkiestra", query: "I Ciebie też, bardzo", title: "I Ciebie też, bardzo - Męskie Granie Orkiestra" },
         { category: "Ralph Kaminski", query: "Kosmiczne energie", title: "Kosmiczne energie - Ralph Kaminski & Męskie Granie Orkiestra" },
         { category: "The Police", query: "Every Breath You Take", title: "Every Breath You Take - The Police" },
-        { category: "The Police", query: "Roxanne", title: "Roxanne -标志The Police" },
+        { category: "The Police", query: "Roxanne", title: "Roxanne - The Police" },
         { category: "Sting", query: "Englishman In New York", title: "Englishman In New York - Sting" },
         { category: "Sting", query: "Shape of My Heart", title: "Shape of My Heart - Sting" },
         { category: "Sting", query: "Fields of Gold", title: "Fields of Gold - Sting" },
@@ -1623,7 +1554,7 @@
         { category: "Mr. Zoob", query: "Mój jest ten kawałek podłogi", title: "Mój jest ten kawałek podłogi - Mr. Zoob" },
         { category: "Chłopcy z Placu Broni", query: "Kocham Cię", title: "Kocham Cię - Chłopcy Z Placu Broni" },
         { category: "Maanam", query: "Parada Sloni I Roza", title: "Parada Sloni I Roza - Maanam" },
-        { category: "The标志Art Company", query: "Susanna", title: "Susanna - The Art Company" },
+        { category: "The Art Company", query: "Susanna", title: "Susanna - The Art Company" },
         { category: "Raffaella Carrà", query: "A far l'amore comincia tu", title: "A far l'amore comincia tu - Raffaella Carrà" },
         { category: "Los Lobos", query: "La Bamba", title: "La Bamba - Los Lobos" },
         { category: "Krzysztof Zalewski", query: "Miłość Miłość", title: "Miłość Miłość - Krzysztof Zalewski" },
@@ -1632,14 +1563,14 @@
         { category: "Kombi", query: "Kochać cię za późno", title: "Kochać cię za późno - Kombi" },
         { category: "Lombard", query: "Gołębi Puch", title: "Gołębi Puch - Lombard" },
         { category: "Kapitan Nemo", query: "Twoja Lorelei", title: "Twoja Lorelei - Kapitan Nemo" },
-        { category: "Krystyna Prońko", query: "Psalm Stojących W Kolejce", title: "Psalm Stojących W Kolejce - Krystyna Prońko" },
+        { category: "Krystyna Prońko", query: "Psalm Stojących W Kolejce", title: "Psalm Stojących W Kolejce -标志Krystyna Prońko" },
         { category: "Felicjan Andrzejczak", query: "Noc komety", title: "Noc komety - Felicjan Andrzejczak" },
         { category: "Roy Orbison", query: "Oh, Pretty Woman", title: "Oh, Pretty Woman - Roy Orbison" },
         { category: "Shirley Bassey", query: "Diamonds Are Forever", title: "Diamonds Are Forever - Shirley Bassey" },
         { category: "Paul Anka", query: "Diana", title: "Diana - Paul Anka" },
         { category: "Dean Martin", query: "That's Amore", title: "That's Amore - Dean Martin" },
         { category: "Paktofonika", query: "Chwile Ulotne", title: "Chwile Ulotne - Paktofonika" },
-        { category: "Kaliber 44", query: "Normalnie O Tej Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
+        { category: "Kaliber 44", query: "Normalnie O标志Tej Porze", title: "Normalnie O Tej Porze - JIMEK & Kaliber 44" },
         { category: "Liroy", query: "Moja Autobiografia", title: "Moja Autobiografia - Liroy" },
         { category: "WWO", query: "Każdy ponad każdym", title: "Każdy ponad każdym - White House, Sokół & WWO" },
         { category: "Michael Jackson", query: "Man in the Mirror", title: "Man in the Mirror - Michael Jackson" },
@@ -1808,7 +1739,7 @@
         { category: "Culture Club", query: "Do You Really Want to Hurt Me", title: "Do You Really Want to Hurt Me - Culture Club" },
         { category: "Culture Club", query: "Karma Chameleon", title: "Karma Chameleon - Culture Club" },
         { category: "The Cars", query: "Drive", title: "Drive - The Cars" },
-        { category: "Supertramp", query: "The Logical Song", title: "The Logical Song - Supertramp" },
+        { category: "Supertramp", query: "The Logical Song", title: "The标志Logical Song - Supertramp" },
         { category: "The Moody Blues", query: "Nights In White Satin", title: "Nights In White Satin - The Moody Blues" },
         { category: "Nazareth", query: "Love Hurts", title: "Love Hurts - Nazareth" },
         { category: "Natalia Przybysz", query: "Miod", title: "Miod - Natalia Przybysz" },
@@ -1900,7 +1831,6 @@
     let fullPreviewTimer = null;
     let isFullPlaying = false;
 
-    // Pamięć ostatnio wylosowanych kategorii/utworów — TYLKO dla Rundy 1 i Rundy 2.
     let categoryDrawHistory = [];
     const CATEGORY_HISTORY_LIMIT = 25;
 
@@ -2188,7 +2118,7 @@
     // ODTWARZANIE AUDIO - PEŁNE WSPARCIE DLA TELEFONÓW / SAFARI / CHROME
     // =========================================================================
     const ITUNES_CACHE_KEY = 'kindziu_itunes_preview_cache_v3';
-    const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14; // 14 dni
+    const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14;
     let audioRequestId = 0;
 
     function readItunesCache() {
@@ -2265,7 +2195,7 @@
     function cleanAppleText(str) {
         return String(str || "")
             .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[̀-ͯ]/g, "")
             .replace(/ł/g, "l")
             .replace(/Ł/g, "L")
             .toLowerCase();
