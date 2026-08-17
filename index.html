@@ -23,37 +23,49 @@
             touch-action: manipulation; 
         }
         
-        /* JEDNOLITE TŁO I BLOKADA SCROLLA DLA PC I TELEFONU */
+        /* ZRESETOWANIE MARGINESÓW I PEŁNA BLOKADA EKRANU */
         html, body {
             width: 100%;
             height: 100%;
-            position: fixed;
+            position: fixed; /* Absolutna blokada scrollowania na iOS/PC */
             top: 0; left: 0; right: 0; bottom: 0;
             overflow: hidden;
             overscroll-behavior: none;
             margin: 0;
             padding: 0;
             background-color: #020611;
+        }
+
+        /* NIESKOŃCZONE TŁO (wypuszczone za ekran, likwiduje odcięcie na dole) */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -100px; left: -100px; right: -100px; bottom: -100px; /* Gradient wychodzi poza fizyczny ekran */
             background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        body {
             font-family: 'Segoe UI', Arial, sans-serif;
             color: #ffffff;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: center; /* Idealne geometryczne wyśrodkowanie karty */
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
         }
 
-        /* CANVAS DOKŁADNIE 1:1 NA CAŁY EKRAN — BEZ ROZCIĄGANIA */
+        /* POWIĘKSZONY CANVAS (żeby animacje nutek nie ścinały się na krawędzi obudowy) */
         #fxCanvas { 
-            position: fixed; 
-            top: 0; 
+            position: absolute; 
+            top: -50px; 
             left: 0; 
             width: 100vw; 
-            height: 100vh; 
+            height: calc(100vh + 150px); /* O wiele wyższy niż ekran */
             pointer-events: none; 
-            z-index: 1; 
+            z-index: -1; 
         }
 
         /* PRZYCISK HOME DOPASOWANY DO NOTCHA */
@@ -83,9 +95,9 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 24px;
             box-shadow: 0 0 50px rgba(0, 180, 216, 0.3);
-            width: 92%;
+            width: 92%; /* Dynamiczna szerokość zamiast twardych paddingów */
             max-width: 480px;
-            max-height: 88vh;
+            max-height: 88vh; /* Nigdy nie przykryje notcha i dolnego paska */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -173,8 +185,8 @@
 
         @media (max-width: 480px) {
             .card {
-                padding: 20px 14px;
-                max-height: 92vh;
+                padding: 20px 14px; /* Kompaktowy padding na mniejszych ekranach */
+                max-height: 92vh; /* Dodatkowa przestrzeń w pionie */
             }
             h1 { font-size: 23px; margin-bottom: 14px; }
             .menu-grid { gap: 10px; margin-top: 6px; }
@@ -376,7 +388,62 @@
         .btn-split-lang:active { transform: scale(0.95); }
         .status-msg { color: #8ecae6; font-size: 13px; margin-bottom: 3px; font-style: italic; }
         .status-msg button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
-    </style>
+    
+
+        /* ================================================================
+           MOBILE/PWA FIX — TYLKO TELEFONY
+           Oryginalna czołówka, animacje i JS pozostają bez zmian.
+           Nie zmieniamy geometrii animacji — naprawiamy tylko warstwę viewportu.
+           ================================================================ */
+        @media (max-width: 767px) {
+            /* Safari/PWA potrafi przyciąć ujemne warstwy body na granicy viewportu.
+               Canvas jest więc prawdziwą warstwą fixed nad tłem, ale pod kartą. */
+            html {
+                width: 100%;
+                min-height: 100%;
+                background: #020611;
+                overflow: hidden;
+            }
+
+            html::before {
+                content: '';
+                position: fixed;
+                z-index: -10;
+                left: -80px;
+                top: -80px;
+                width: calc(100% + 160px);
+                height: calc(100% + 160px);
+                background: radial-gradient(circle at center, #0a192f 0%, #020611 100%);
+                pointer-events: none;
+            }
+
+            body {
+                background: transparent;
+                isolation: isolate;
+            }
+
+            /* Ważne: nie zwiększamy canvasu i nie przesuwamy jego współrzędnych.
+               Tylko przestajemy pozwalać, aby był przycinany jako ujemna warstwa. */
+            #fxCanvas {
+                position: fixed;
+                inset: -1px;
+                width: calc(100% + 2px);
+                height: calc(100% + 2px);
+                z-index: 0;
+                display: block;
+                pointer-events: none;
+            }
+
+            /* Karta pozostaje ponad animacją. Jej pozycję zachowuje flex body,
+               więc nie ingerujemy w transform używany przez czołówkę. */
+            .card {
+                z-index: 10;
+                margin: auto;
+            }
+
+            .home-btn { z-index: 99999; }
+        }
+</style>
 </head>
 <body>
 
@@ -504,6 +571,7 @@
     let clickAudioContext = null;
     let uiAudioCtx = null;
 
+    // Blokada zoomu i przesuwania na iOS
     document.addEventListener('gesturestart', function (e) {
         e.preventDefault();
     });
@@ -589,38 +657,37 @@
         robertVoice.currentTime = 0;
     }
 
-    // =========================================================================
-    // SILNIK EFEKTÓW — DOKŁADNIE JAK NA PC, ZERO JITTERA I PŁYNNY FADE-OUT
-    // =========================================================================
     const canvas = document.getElementById('fxCanvas');
     const ctx = canvas.getContext('2d');
-
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', resizeCanvas);
+
+    function resizeCanvas() {
+        const w = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0, screen.width || 0);
+        const h = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0, screen.height || 0);
+        canvas.width = w;
+        canvas.height = h + 150; // +150px zapasu, aby nutki nie ścinały się na dole obudowy
+    }
 
     let particles = [];
     let musicNotes = [];
     let spotlightAngle = 0;
     let effectTimer = null;
-    let isSpawningEffects = false;
+    let fadeOutInterval = null;
 
     function createFirework(x, y) {
         const colors = ['#ffb703', '#2ecc71', '#00d4ff', '#e74c3c', '#9b59b6', '#ffffff'];
-        for (let i = 0; i < 35; i++) {
+        for (let i = 0; i < 45; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 6 + 2;
+            const speed = Math.random() * 7 + 2;
             particles.push({
                 x: x, y: y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 alpha: 1,
                 color: colors[Math.floor(Math.random() * colors.length)],
-                size: Math.random() * 2.5 + 2
+                size: Math.random() * 3 + 2
             });
         }
     }
@@ -628,101 +695,64 @@
     function createMusicNote() {
         const notesSymbols = ['♪', '♫', '♬', '♩'];
         musicNotes.push({
-            x: Math.random() * (canvas.width - 60) + 30,
-            y: canvas.height + 25,
-            vy: Math.random() * 2.2 + 1.8,
-            vx: (Math.random() - 0.5) * 1.5,
+            x: Math.random() * canvas.width,
+            y: canvas.height + 20, // Start z ukrytej, przedłużonej na dole strefy
+            vy: Math.random() * 2.5 + 1.8,
+            vx: (Math.random() - 0.5) * 2,
             alpha: 1,
             symbol: notesSymbols[Math.floor(Math.random() * notesSymbols.length)],
-            size: Math.random() * 12 + 22
+            size: Math.random() * 14 + 22
         });
     }
 
     function animateStudio() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         spotlightAngle += 0.015;
-
-        // Reflektory sceniczne
         ctx.save();
         ctx.globalAlpha = 0.12;
 
         let grad1 = ctx.createLinearGradient(0, 0, canvas.width / 2 + Math.sin(spotlightAngle) * 350, canvas.height);
         grad1.addColorStop(0, '#00d4ff'); grad1.addColorStop(1, 'transparent');
         ctx.fillStyle = grad1;
-        ctx.beginPath(); 
-        ctx.moveTo(0, 0); 
-        ctx.lineTo(canvas.width / 2 + Math.sin(spotlightAngle) * 450, canvas.height); 
-        ctx.lineTo(0, canvas.height); 
-        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width / 2 + Math.sin(spotlightAngle) * 450, canvas.height); ctx.lineTo(0, canvas.height); ctx.fill();
 
         let grad2 = ctx.createLinearGradient(canvas.width, 0, canvas.width / 2 - Math.sin(spotlightAngle) * 350, canvas.height);
         grad2.addColorStop(0, '#ffb703'); grad2.addColorStop(1, 'transparent');
         ctx.fillStyle = grad2;
-        ctx.beginPath(); 
-        ctx.moveTo(canvas.width, 0); 
-        ctx.lineTo(canvas.width / 2 - Math.sin(spotlightAngle) * 450, canvas.height); 
-        ctx.lineTo(canvas.width, canvas.height); 
-        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(canvas.width, 0); ctx.lineTo(canvas.width / 2 - Math.sin(spotlightAngle) * 450, canvas.height); ctx.lineTo(canvas.width, canvas.height); ctx.fill();
         ctx.restore();
 
-        // Płynna animacja nutek z naturalnym rozmyciem po wyłączeniu muzyki
-        for (let i = musicNotes.length - 1; i >= 0; i--) {
-            const n = musicNotes[i];
-            n.y -= n.vy; 
-            n.x += n.vx;
+        musicNotes.forEach((n, index) => {
+            n.y -= n.vy; n.x += n.vx;
+            if (n.y < canvas.height * 0.15) n.alpha -= 0.025;
+            ctx.save();
+            ctx.globalAlpha = Math.max(n.alpha, 0);
+            ctx.fillStyle = '#ffd700';
+            ctx.font = `bold ${n.size}px Arial, sans-serif`;
+            ctx.shadowColor = '#ffb703'; ctx.shadowBlur = 15;
+            ctx.fillText(n.symbol, n.x, n.y);
+            ctx.restore();
+            if (n.y < -60 || n.alpha <= 0) musicNotes.splice(index, 1);
+        });
 
-            if (!isSpawningEffects) {
-                n.alpha -= 0.014; // Miękki, 60fps fade out (ok. 1.2s rozpuszczania w tle)
-            } else if (n.y < canvas.height * 0.2) {
-                n.alpha -= 0.015; // Naturalne wygaszanie pod sufitem
-            }
-
-            if (n.alpha > 0) {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, Math.min(1, n.alpha));
-                ctx.fillStyle = '#ffd700';
-                ctx.font = `bold ${n.size}px Arial, sans-serif`;
-                ctx.fillText(n.symbol, n.x, n.y);
-                ctx.restore();
-            }
-
-            if (n.y < -50 || n.alpha <= 0) {
-                musicNotes.splice(i, 1);
-            }
-        }
-
-        // Animacja cząsteczek fajerwerków
-        for (let i = particles.length - 1; i >= 0; i--) {
-            const p = particles[i];
-            p.x += p.vx; 
-            p.y += p.vy;
+        particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy;
             p.vy += 0.12;
-            p.alpha -= isSpawningEffects ? 0.016 : 0.025;
-
-            if (p.alpha > 0) {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, Math.min(1, p.alpha));
-                ctx.fillStyle = p.color;
-                ctx.beginPath(); 
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); 
-                ctx.fill();
-                ctx.restore();
-            }
-
-            if (p.alpha <= 0) {
-                particles.splice(i, 1);
-            }
-        }
+            p.alpha -= 0.018;
+            ctx.save();
+            ctx.globalAlpha = Math.max(p.alpha, 0);
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+            if (p.alpha <= 0) particles.splice(index, 1);
+        });
 
         requestAnimationFrame(animateStudio);
     }
     animateStudio();
 
     function startStudioShowEffects() {
-        isSpawningEffects = true;
-        if (effectTimer) clearInterval(effectTimer);
         effectTimer = setInterval(() => {
-            if (!isSpawningEffects) return;
             const rx = Math.random() * (canvas.width - 150) + 75;
             const ry = Math.random() * (canvas.height * 0.55);
             createFirework(rx, ry);
@@ -732,11 +762,19 @@
     }
 
     function stopStudioShowEffects() {
-        isSpawningEffects = false;
-        if (effectTimer) { 
-            clearInterval(effectTimer); 
-            effectTimer = null; 
-        }
+        if (effectTimer) { clearInterval(effectTimer); effectTimer = null; }
+        if (fadeOutInterval) return;
+        fadeOutInterval = setInterval(() => {
+            let stillAlive = false;
+            particles.forEach(p => { p.alpha -= 0.02; if(p.alpha > 0) stillAlive = true; });
+            musicNotes.forEach(n => { n.alpha -= 0.02; if(n.alpha > 0) stillAlive = true; });
+            if (!stillAlive) {
+                clearInterval(fadeOutInterval);
+                fadeOutInterval = null;
+                particles = [];
+                musicNotes = [];
+            }
+        }, 30);
     }
 
     function typeWriterEffect(text, elementId, speed = 45) {
@@ -872,7 +910,7 @@
         { category: "Chappell Roan", query: "Good Luck, Babe!", title: "Good Luck, Babe! - Chappell Roan" },
         { category: "Jan Pietrzak", query: "Żeby Polska", title: "Żeby Polska - Jan Pietrzak" },
         { category: "Avicii", query: "Levels", title: "Levels - Avicii" },
-        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To标志Co Mam - Kasia Kowalska" },
+        { category: "Kasia Kowalska", query: "A To Co Mam", title: "A To Co Mam - Kasia Kowalska" },
         { category: "Stare Dobre Małżeństwo", query: "Czarny Blues O Czwartej Nad Ranem", title: "Czarny Blues O Czwartej Nad Ranem - Stare Dobre Małżeństwo" },
         { category: "Gigi D'Agostino", query: "L'amour toujours", title: "L'amour toujours - Gigi D'Agostino" },
         { category: "Metallica", query: "Nothing Else Matters", title: "Nothing Else Matters - Metallica" },
@@ -917,14 +955,14 @@
         { category: "Ewelina Lisowska", query: "W Stronę Słońca", title: "W Stronę Słońca - Ewelina Lisowska" },
         { category: "Sarsa", query: "Naucz Mnie", title: "Naucz Mnie - Sarsa" },
         { category: "The Rolling Stones", query: "Start Me Up", title: "Start Me Up - The Rolling Stones" },
-        { category: "The Rolling Stones", query: "Satisfaction", title: "Satisfaction - The标志Rolling Stones" },
+        { category: "The Rolling Stones", query: "Satisfaction", title: "Satisfaction - The Rolling Stones" },
         { category: "Aerosmith", query: "Crazy", title: "Crazy - Aerosmith" },
         { category: "Aerosmith", query: "I Don't Want to Miss a Thing", title: "I Don't Want to Miss a Thing - Aerosmith" },
         { category: "Andrzej Rosiewicz", query: "Chłopcy Radarowcy", title: "Chłopcy Radarowcy - Andrzej Rosiewicz" },
         { category: "Andrzej Rosiewicz", query: "Najwięcej witaminy", title: "Najwięcej witaminy - Andrzej Rosiewicz" },
         { category: "Michał Bajor", query: "Ogrzej Mnie", title: "Ogrzej Mnie - Michał Bajor" },
         { category: "Budka Suflera", query: "Jolka, Jolka pamiętasz...", title: "Jolka, Jolka pamiętasz... - Budka Suflera" },
-        { category: "Krzysztof Kiljański", query: "Prócz Ciebie, Nic", title: "Prócz标志Ciebie, Nic - Krzysztof Kiljański" },
+        { category: "Krzysztof Kiljański", query: "Prócz Ciebie, Nic", title: "Prócz Ciebie, Nic - Krzysztof Kiljański" },
         { category: "Zdzisława Sośnicka & Zbigniew Wodecki", query: "Z tobą chcę oglądać świat", title: "Z tobą chcę oglądać świat - Zdzisława Sośnicka & Zbigniew Wodecki" },
         { category: "Krzysztof Krawczyk & Edyta Bartosiewicz", query: "Trudno Tak", title: "Trudno Tak - Krzysztof Krawczyk & Edyta Bartosiewicz" },
         { category: "Mieczysław Fogg", query: "Jesienne róże", title: "Jesienne róże - Mieczysław Fogg" },
@@ -1049,7 +1087,7 @@
         { category: "Feel", query: "No pokaz Na Co Cie Stac", title: "No pokaz Na Co Cie Stac - Feel" },
         { category: "Feel", query: "A Gdy Jest Juz Ciemno", title: "A Gdy Jest Juz Ciemno - Feel" },
         { category: "Kwiat Jabłoni", query: "Od nowa", title: "Od nowa - Kwiat Jabłoni" },
-        { category: "Kwiat标志Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś Późno Pójdę Spać - Kwiat Jabłoni" },
+        { category: "Kwiat Jabłoni", query: "Dziś Późno Pójdę Spać", title: "Dziś Późno Pójdę Spać - Kwiat Jabłoni" },
         { category: "Daria Zawiałow", query: "Kaonashi", title: "Kaonashi - Daria Zawiałow" },
         { category: "Mrozu", query: "Aura", title: "Aura - Mrozu" },
         { category: "Mrozu", query: "Jak Nie My To Kto", title: "Jak Nie My To Kto - Mrozu" },
@@ -1099,7 +1137,7 @@
         { category: "Ricchi e Poveri", query: "Sarà Perché Ti Amo", title: "Sarà Perché Ti Amo - Ricchi & Poveri" },
         { category: "Toto Cutugno", query: "Solo noi", title: "Solo noi - Toto Cutugno" },
         { category: "Toto Cutugno", query: "L'italiano", title: "L'italiano - Toto Cutugno" },
-        { category: "Al Bano & Romina Power", query: "Ci标志Sarà", title: "Ci Sarà - Al Bano Carrisi & Romina Power" },
+        { category: "Al Bano & Romina Power", query: "Ci Sarà", title: "Ci Sarà - Al Bano Carrisi & Romina Power" },
         { category: "Al Bano & Romina Power", query: "Felicità", title: "Felicità - Al Bano Carrisi & Romina Power" },
         { category: "Andrzej Piaseczny", query: "Chodz, Przytul, Przebacz", title: "Chodz, Przytul, Przebacz - Andrzej Piaseczny" },
         { category: "De Mono", query: "Statki Na Niebie", title: "Statki Na Niebie - De Mono" },
@@ -1182,7 +1220,7 @@
         { category: "Czerwone Gitary", query: "Anna Maria", title: "Anna Maria - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Nikt Na Swiecie Nie Wie", title: "Nikt Na Swiecie Nie Wie - Czerwone Gitary & Orkiestra Symfoników Gdańskich" },
         { category: "Czerwone Gitary", query: "Matura", title: "Matura - Czerwone Gitary" },
-        { category: "Nie Zadzieraj Nosa", query: "Nie Zadzieraj Nosa", title: "Nie Zadzieraj Nosa - Czerwone Gitary" },
+        { category: "Czerwone Gitary", query: "Nie Zadzieraj Nosa", title: "Nie Zadzieraj Nosa - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Tak Bardzo Sie Staralem", title: "Tak Bardzo Sie Staralem - Czerwone Gitary" },
         { category: "Czerwone Gitary", query: "Dozwolone Do Lat Osiemnastu", title: "Dozwolone Do Lat Osiemnastu - Czerwone Gitary" },
         { category: "Ryszard Rynkowski", query: "Dziewczyny Lubią Brąz", title: "Dziewczyny Lubią Brąz - Ryszard Rynkowski" },
@@ -1437,7 +1475,7 @@
         { category: "Republika", query: "Biała Flaga", title: "Biała Flaga - Republika" },
         { category: "Republika", query: "Telefony", title: "Telefony - Republika" },
         { category: "Republika", query: "Mamona", title: "Mamona - Republika" },
-        { category: "Obywatel G.C.", query: "Nie Pytaj O Polskę", title: "Nie标志Pytaj O Polskę - Obywatel G.C." },
+        { category: "Obywatel G.C.", query: "Nie Pytaj O Polskę", title: "Nie Pytaj O Polskę - Obywatel G.C." },
         { category: "Obywatel G.C.", query: "Tak ... Tak ... To Ja", title: "Tak ... Tak ... To Ja - Obywatel G.C." },
         { category: "Hey", query: "Teksanski", title: "Teksanski - Hey" },
         { category: "Hey", query: "Moja i Twoja Nadzieja", title: "Moja i Twoja Nadzieja - Hey" },
@@ -1556,7 +1594,7 @@
         { category: "Maanam", query: "Parada Sloni I Roza", title: "Parada Sloni I Roza - Maanam" },
         { category: "The Art Company", query: "Susanna", title: "Susanna - The Art Company" },
         { category: "Raffaella Carrà", query: "A far l'amore comincia tu", title: "A far l'amore comincia tu - Raffaella Carrà" },
-        { category: "Los Lobos", query: "La Bamba", title: "La Bamba - Los标志Lobos" },
+        { category: "Los Lobos", query: "La Bamba", title: "La Bamba - Los Lobos" },
         { category: "Krzysztof Zalewski", query: "Miłość Miłość", title: "Miłość Miłość - Krzysztof Zalewski" },
         { category: "IGO", query: "Helena", title: "Helena - IGO" },
         { category: "Smolasty", query: "Duże oczy", title: "Duże oczy - Smolasty, Pedro & francis" },
@@ -1611,7 +1649,7 @@
         { category: "Joe Cocker", query: "Up Where We Belong", title: "Up Where We Belong - Joe Cocker & Jennifer Warnes" },
         { category: "Joe Cocker", query: "Unchain My Heart", title: "Unchain My Heart - Joe Cocker" },
         { category: "Wojciech Młynarski", query: "Jesteśmy na Wczasach", title: "Jesteśmy na Wczasach - Wojciech Młynarski" },
-        { category: "Wojciech Młynarski", query: "Róbmy Swoje", title: "Róbmy标志Swoje - Wojciech Młynarski" },
+        { category: "Wojciech Młynarski", query: "Róbmy Swoje", title: "Róbmy Swoje - Wojciech Młynarski" },
         { category: "Wojciech Młynarski", query: "Dziewczyny Bądźcie dla Nas Dobre na Wiosnę", title: "Dziewczyny Bądźcie dla Nas Dobre na Wiosnę - Wojciech Młynarski" },
         { category: "Wojciech Młynarski", query: "Absolutnie", title: "Absolutnie - Wojciech Młynarski" },
         { category: "Lionel Richie", query: "All Night Long", title: "All Night Long - Lionel Richie" },
@@ -1753,7 +1791,7 @@
         { category: "Pitbull", query: "Timber", title: "Timber - Pitbull & Kesha" },
         { category: "Pitbull", query: "Give Me Everything", title: "Give Me Everything - Pitbull" },
         { category: "Pitbull", query: "I Know You Want Me", title: "I Know You Want Me - Pitbull" },
-        { category: "Rihanna", query: "Don't Stop the Music", title: "Don't标志Stop the Music - The Treblemakers" },
+        { category: "Rihanna", query: "Don't Stop the Music", title: "Don't Stop the Music - The Treblemakers" },
         { category: "Katy Perry", query: "Roar", title: "Roar - Katy Perry" },
         { category: "Katy Perry", query: "Firework", title: "Firework - Katy Perry" },
         { category: "Katy Perry", query: "Dark Horse", title: "Dark Horse - Katy Perry" },
@@ -1831,6 +1869,11 @@
     let fullPreviewTimer = null;
     let isFullPlaying = false;
 
+    // Pamięć ostatnio wylosowanych kategorii/utworów — TYLKO dla Rundy 1 i Rundy 2.
+    // Każdy element to JEDNO losowanie (lista kategorii z tego losowania).
+    // Dana kategoria/utwór nie może się pojawić ponownie, dopóki nie "wypadnie"
+    // z ostatnich CATEGORY_HISTORY_LIMIT LOSOWAŃ (a nie pojedynczych kategorii!).
+    // Nie dotyczy trybu "DO POWTÓRKI".
     let categoryDrawHistory = [];
     const CATEGORY_HISTORY_LIMIT = 25;
 
@@ -2055,9 +2098,12 @@
         
         const categoriesList = [...new Set(masterSongPool.map(item => item.category))];
 
+        // Wykluczamy kategorie, które pojawiły się w ostatnich CATEGORY_HISTORY_LIMIT LOSOWANIACH
+        // (dotyczy tylko Rundy 1 i Rundy 2 — tryb "DO POWTÓRKI" nie dochodzi do tego miejsca kodu).
         const excludedCategories = new Set(categoryDrawHistory.flat());
         let availableCategories = categoriesList.filter(cat => !excludedCategories.has(cat));
 
+        // Zabezpieczenie awaryjne — gdyby dostępnych kategorii zabrakło (przy tak dużej bazie nie powinno się zdarzyć).
         if (availableCategories.length < requiredCount) {
             availableCategories = categoriesList;
         }
@@ -2065,6 +2111,7 @@
         const shuffledCategories = availableCategories.sort(() => 0.5 - Math.random());
         const selectedCategories = shuffledCategories.slice(0, requiredCount);
 
+        // Zapisujemy CAŁE bieżące losowanie jako jeden element historii i przycinamy do limitu losowań.
         categoryDrawHistory.push(selectedCategories);
         if (categoryDrawHistory.length > CATEGORY_HISTORY_LIMIT) {
             categoryDrawHistory = categoryDrawHistory.slice(-CATEGORY_HISTORY_LIMIT);
@@ -2118,7 +2165,7 @@
     // ODTWARZANIE AUDIO - PEŁNE WSPARCIE DLA TELEFONÓW / SAFARI / CHROME
     // =========================================================================
     const ITUNES_CACHE_KEY = 'kindziu_itunes_preview_cache_v3';
-    const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14;
+    const ITUNES_CACHE_TTL = 1000 * 60 * 60 * 24 * 14; // 14 dni
     let audioRequestId = 0;
 
     function readItunesCache() {
