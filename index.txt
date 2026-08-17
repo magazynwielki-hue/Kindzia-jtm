@@ -1869,12 +1869,6 @@
     let fullPreviewTimer = null;
     let isFullPlaying = false;
 
-    // Pamięć ostatnio wylosowanych kategorii/utworów — TYLKO dla Rundy 1 i Rundy 2.
-    // Dana kategoria/utwór nie może się pojawić ponownie, dopóki nie "wypadnie"
-    // z ostatnich CATEGORY_HISTORY_LIMIT losowań. Nie dotyczy trybu "DO POWTÓRKI".
-    let categoryDrawHistory = [];
-    const CATEGORY_HISTORY_LIMIT = 25;
-
     const audio = document.getElementById('audioPlayer');
     const moneyDisplay = document.getElementById('moneyDisplay');
     const stopBtn = document.getElementById('stopBtn');
@@ -2095,24 +2089,8 @@
         const requiredCount = currentRound === 1 ? 5 : 3;
         
         const categoriesList = [...new Set(masterSongPool.map(item => item.category))];
-
-        // Wykluczamy kategorie, które pojawiły się w ostatnich CATEGORY_HISTORY_LIMIT losowaniach
-        // (dotyczy tylko Rundy 1 i Rundy 2 — tryb "DO POWTÓRKI" nie dochodzi do tego miejsca kodu).
-        let availableCategories = categoriesList.filter(cat => !categoryDrawHistory.includes(cat));
-
-        // Zabezpieczenie awaryjne — gdyby dostępnych kategorii zabrakło (przy tak dużej bazie nie powinno się zdarzyć).
-        if (availableCategories.length < requiredCount) {
-            availableCategories = categoriesList;
-        }
-
-        const shuffledCategories = availableCategories.sort(() => 0.5 - Math.random());
+        const shuffledCategories = categoriesList.sort(() => 0.5 - Math.random());
         const selectedCategories = shuffledCategories.slice(0, requiredCount);
-
-        // Zapisujemy nowo wylosowane kategorie do historii i przycinamy ją do limitu.
-        categoryDrawHistory.push(...selectedCategories);
-        if (categoryDrawHistory.length > CATEGORY_HISTORY_LIMIT) {
-            categoryDrawHistory = categoryDrawHistory.slice(-CATEGORY_HISTORY_LIMIT);
-        }
 
         activeCategoriesSet = selectedCategories.map((catName, index) => {
             const availableSongs = masterSongPool.filter(s => s.category === catName);
