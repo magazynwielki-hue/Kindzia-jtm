@@ -2131,6 +2131,7 @@
             btn.innerHTML = `<span>${item.category}</span> <span>${isPlayed ? '✓' : '➔'}</span>`;
             if (!isPlayed) {
                 btn.onclick = () => startSong(item);
+                prefetchSongPreview(item);
             }
             list.appendChild(btn);
         });
